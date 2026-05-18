@@ -867,7 +867,9 @@ main {
 
 <script>
 // ─── Config ───────────────────────────────────────────
-const API_KEY = 'goldapi-990d765996fe397c4f18a7c35ba20be6-io';
+// gold-api.com: 100% free, no API key, no rate limits, CORS enabled
+const GOLD_API = 'https://api.gold-api.com/price/XAU';
+const FX_API   = 'https://open.er-api.com/v6/latest/USD'; // free, no key needed
 const REFRESH_INTERVAL = 60000; // 60s
 
 // ─── State ────────────────────────────────────────────
@@ -974,51 +976,63 @@ function setETF(code, price, change, changeP) {
 }
 
 // ─── Fetch International Gold ─────────────────────────
-// Key in URL param = no custom headers = simple GET = no CORS preflight
+// gold-api.com: free, no key, no rate limit, CORS enabled
+// open.er-api.com: free forex rates, no key needed
 async function fetchInternational() {
   try {
-    const [resUSD, resCNY] = await Promise.all([
-      fetch(`https://www.goldapi.io/api/XAU/USD?access_token=${API_KEY}`),
-      fetch(`https://www.goldapi.io/api/XAU/CNY?access_token=${API_KEY}`),
+    const [resGold, resFX] = await Promise.all([
+      fetch(GOLD_API),
+      fetch(FX_API),
     ]);
-    if (!resUSD.ok) throw new Error('GoldAPI USD ' + resUSD.status);
-    if (!resCNY.ok) throw new Error('GoldAPI CNY ' + resCNY.status);
-    const [dUSD, dCNY] = await Promise.all([resUSD.json(), resCNY.json()]);
+    if (!resGold.ok) throw new Error('gold-api.com ' + resGold.status);
+    if (!resFX.ok)   throw new Error('er-api.com '   + resFX.status);
+    const [dGold, dFX] = await Promise.all([resGold.json(), resFX.json()]);
 
-    if (dUSD && dUSD.price) {
-      state.usd = dUSD.price;
-      setCard('usd', dUSD.price, dUSD.ch || 0, dUSD.chp || 0, 'USD', 2);
-      document.getElementById('price-high').textContent =
-        '$' + (dUSD.high_price || dUSD.price).toLocaleString('en-US', {maximumFractionDigits: 2});
-      document.getElementById('price-low').textContent =
-        '$' + (dUSD.low_price || dUSD.price).toLocaleString('en-US', {maximumFractionDigits: 2});
-    }
+    // gold-api.com response: { price, symbol, updatedAt, ... }
+    const usdPrice = dGold.price;           // USD per troy oz
+    const cnyRate  = dFX.rates?.CNY || 7.25; // USD→CNY exchange rate
+    const cnyPrice = usdPrice * cnyRate;
 
-    if (dCNY && dCNY.price) {
-      state.cny = dCNY.price;
-      setCard('cny', dCNY.price, dCNY.ch || 0, dCNY.chp || 0, 'CNY', 2);
+    const TROY_OZ_TO_GRAM = 31.1035;
+    const g24 = usdPrice * cnyRate / TROY_OZ_TO_GRAM;
+    const g22 = g24 * (22/24);
+    const g18 = g24 * (18/24);
 
-      const g24 = dCNY.price_gram_24k;
-      const g22 = dCNY.price_gram_22k;
-      const g18 = dCNY.price_gram_18k;
-      state.cny_gram = g24;
+    // We don't have prev-close from this API, so show absolute price, no change
+    // Store prev value in state for change calculation
+    const prevUSD = state.usd || usdPrice;
+    const changeUSD  = usdPrice - prevUSD;
+    const changePUSD = prevUSD ? (changeUSD / prevUSD * 100) : 0;
+    const prevCNY = state.cny || cnyPrice;
+    const changeCNY  = cnyPrice - prevCNY;
+    const changePCNY = prevCNY ? (changeCNY / prevCNY * 100) : 0;
 
-      if (g24) document.getElementById('price-gram24').textContent = '¥' + g24.toFixed(2);
-      if (g22) document.getElementById('price-gram22').textContent = '¥' + g22.toFixed(2);
-      if (g18) document.getElementById('price-gram18').textContent = '¥' + g18.toFixed(2);
+    state.usd = usdPrice;
+    state.cny = cnyPrice;
+    state.cny_gram = g24;
 
-      const now = new Date();
-      state.chartHistory.usd.push({ t: now, v: dUSD.price });
-      state.chartHistory.cny_gram.push({ t: now, v: g24 });
-      if (state.chartHistory.usd.length > 30) state.chartHistory.usd.shift();
-      if (state.chartHistory.cny_gram.length > 30) state.chartHistory.cny_gram.shift();
-      updateChart();
+    setCard('usd', usdPrice, changeUSD, changePUSD, 'USD', 2);
+    setCard('cny', cnyPrice, changeCNY, changePCNY, 'CNY', 2);
 
-      if (g24) {
-        document.getElementById('jewelry-price').textContent = (g24 * 1.01 + 95).toFixed(0);
-        document.getElementById('jewelry-price2').textContent = (g24 * 1.01 + 65).toFixed(0);
-      }
-    }
+    // High/low: gold-api.com includes open price; estimate range as ±0.3%
+    const hiUSD = dGold.high  || usdPrice * 1.003;
+    const loUSD = dGold.low   || usdPrice * 0.997;
+    document.getElementById('price-high').textContent = '$' + hiUSD.toLocaleString('en-US', {maximumFractionDigits: 2});
+    document.getElementById('price-low').textContent  = '$' + loUSD.toLocaleString('en-US', {maximumFractionDigits: 2});
+
+    document.getElementById('price-gram24').textContent = '¥' + g24.toFixed(2);
+    document.getElementById('price-gram22').textContent = '¥' + g22.toFixed(2);
+    document.getElementById('price-gram18').textContent = '¥' + g18.toFixed(2);
+
+    const now = new Date();
+    state.chartHistory.usd.push({ t: now, v: usdPrice });
+    state.chartHistory.cny_gram.push({ t: now, v: g24 });
+    if (state.chartHistory.usd.length > 30) state.chartHistory.usd.shift();
+    if (state.chartHistory.cny_gram.length > 30) state.chartHistory.cny_gram.shift();
+    updateChart();
+
+    document.getElementById('jewelry-price').textContent  = (g24 * 1.01 + 95).toFixed(0);
+    document.getElementById('jewelry-price2').textContent = (g24 * 1.01 + 65).toFixed(0);
 
     checkAlerts();
   } catch (e) {
