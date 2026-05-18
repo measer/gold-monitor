@@ -973,18 +973,16 @@ function setETF(code, price, change, changeP) {
   state.etfs[code] = price;
 }
 
-// ─── Fetch International Gold (GoldAPI — direct HTTPS, no proxy needed) ──
+// ─── Fetch International Gold ─────────────────────────
+// Key in URL param = no custom headers = simple GET = no CORS preflight
 async function fetchInternational() {
   try {
     const [resUSD, resCNY] = await Promise.all([
-      fetch('https://www.goldapi.io/api/XAU/USD', {
-        headers: { 'x-access-token': API_KEY, 'Content-Type': 'application/json' }
-      }),
-      fetch('https://www.goldapi.io/api/XAU/CNY', {
-        headers: { 'x-access-token': API_KEY, 'Content-Type': 'application/json' }
-      }),
+      fetch(`https://www.goldapi.io/api/XAU/USD?access_token=${API_KEY}`),
+      fetch(`https://www.goldapi.io/api/XAU/CNY?access_token=${API_KEY}`),
     ]);
-    if (!resUSD.ok) throw new Error('GoldAPI ' + resUSD.status);
+    if (!resUSD.ok) throw new Error('GoldAPI USD ' + resUSD.status);
+    if (!resCNY.ok) throw new Error('GoldAPI CNY ' + resCNY.status);
     const [dUSD, dCNY] = await Promise.all([resUSD.json(), resCNY.json()]);
 
     if (dUSD && dUSD.price) {
@@ -1040,7 +1038,8 @@ async function fetchDomestic() {
   const queryStr = items.map(x => x.id).join(',');
 
   try {
-    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`);
+    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`, { mode: 'cors' });
+    if (!res.ok) throw new Error('Tencent domestic ' + res.status);
     const text = await res.text();
     const lines = text.trim().split('\n');
 
@@ -1091,7 +1090,8 @@ async function fetchETFs() {
   const queryStr = etfList.map(e => e.prefix + e.code).join(',');
 
   try {
-    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`);
+    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`, { mode: 'cors' });
+    if (!res.ok) throw new Error('Tencent domestic ' + res.status);
     const text = await res.text();
     const lines = text.trim().split('\n');
 
