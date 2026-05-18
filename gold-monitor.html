@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黄金行情监视器</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C96A;
+  --gold-pale: #F5E6B8;
+  --gold-dim: rgba(201,168,76,0.15);
+  --gold-border: rgba(201,168,76,0.3);
+  --bg: #0D0D0D;
+  --bg2: #141414;
+  --bg3: #1A1A1A;
+  --bg4: #222222;
+  --text: #E8E0D0;
+  --text2: #9A9080;
+  --text3: #5A5248;
+  --up: #4CAF7A;
+  --down: #E05050;
+  --up-bg: rgba(76,175,122,0.1);
+  --down-bg: rgba(224,80,80,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Mono', 'SF Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── Header ─── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13,13,13,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--gold-border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--gold);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  font-family: 'Noto Serif SC', serif;
+  color: #0D0D0D;
+  font-weight: 700;
+}
+
+.logo-text {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  color: var(--gold-light);
+  letter-spacing: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.last-update {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: right;
+  line-height: 1.5;
+}
+
+.last-update span {
+  display: block;
+  color: var(--text2);
+}
+
+.refresh-btn {
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refresh-btn:hover { background: rgba(201,168,76,0.25); border-color: var(--gold); }
+.refresh-btn:active { transform: scale(0.96); }
+.refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Main Layout ─── */
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+/* ─── Section Labels ─── */
+.section-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin: 28px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bg4);
+}
+
+/* ─── Price Card ─── */
+.price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.price-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.price-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.4;
+}
+
+.price-card.up { border-color: rgba(76,175,122,0.25); }
+.price-card.up::before { background: var(--up); opacity: 0.7; }
+.price-card.down { border-color: rgba(224,80,80,0.25); }
+.price-card.down::before { background: var(--down); opacity: 0.7; }
+
+.card-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.card-price {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--gold-light);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.card-price.loading {
+  color: var(--text3);
+  font-size: 18px;
+}
+
+.card-unit {
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: 3px;
+}
+
+.card-change {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.card-change.up { color: var(--up); }
+.card-change.down { color: var(--down); }
+.card-change.neutral { color: var(--text3); }
+
+.card-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ─── Wide Card (1 col full width) ─── */
+.price-card.wide {
+  grid-column: 1 / -1;
+}
+
+/* ─── International section: 2 big + sub rows ─── */
+.intl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ─── Chart Card ─── */
+.chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 10px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.chart-title {
+  font-size: 11px;
+  color: var(--text2);
+  letter-spacing: 1px;
+}
+
+.chart-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.chart-tab {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--bg4);
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.chart-tab.active {
+  background: var(--gold-dim);
+  border-color: var(--gold-border);
+  color: var(--gold);
+}
+
+.chart-wrap {
+  position: relative;
+  height: 180px;
+}
+
+/* ─── ETF Grid ─── */
+.etf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.etf-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.2s;
+}
+
+.etf-card.up { border-left: 2px solid var(--up); }
+.etf-card.down { border-left: 2px solid var(--down); }
+
+.etf-name { font-size: 11px; color: var(--text2); }
+.etf-code { font-size: 10px; color: var(--text3); }
+.etf-price { font-size: 20px; font-weight: 500; color: var(--text); }
+.etf-change { font-size: 11px; }
+.etf-change.up { color: var(--up); }
+.etf-change.down { color: var(--down); }
+
+/* ─── Bank Section ─── */
+.bank-table {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.bank-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--bg3);
+  align-items: center;
+  gap: 8px;
+}
+
+.bank-row:last-child { border-bottom: none; }
+
+.bank-row.header {
+  background: var(--bg3);
+  padding: 8px 16px;
+}
+
+.bank-row.header span {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  text-transform: uppercase;
+}
+
+.bank-name { font-size: 12px; color: var(--text); }
+.bank-buy { font-size: 13px; color: var(--gold-light); font-weight: 500; }
+.bank-diff { font-size: 11px; color: var(--text3); }
+.bank-link a {
+  font-size: 10px;
+  color: var(--gold);
+  text-decoration: none;
+  padding: 3px 8px;
+  border: 1px solid var(--gold-border);
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.bank-link a:hover { background: var(--gold-dim); }
+
+.bank-note {
+  font-size: 10px;
+  color: var(--text3);
+  padding: 8px 16px;
+  border-top: 1px solid var(--bg3);
+  line-height: 1.6;
+}
+
+/* ─── Jewelry Section ─── */
+.jewelry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.jewelry-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.jewelry-brand { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.jewelry-price { font-size: 20px; font-weight: 500; color: var(--text); }
+.jewelry-unit { font-size: 10px; color: var(--text3); margin-left: 2px; }
+.jewelry-note { font-size: 10px; color: var(--text3); margin-top: 4px; line-height: 1.5; }
+.jewelry-link { margin-top: 8px; }
+.jewelry-link a {
+  font-size: 10px;
+  color: var(--gold);
+  text-decoration: none;
+  border-bottom: 1px solid var(--gold-border);
+  transition: border-color 0.15s;
+}
+.jewelry-link a:hover { border-color: var(--gold); }
+
+/* ─── Alert Panel ─── */
+.alert-panel {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.alert-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.alert-select, .alert-input {
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.alert-select:focus, .alert-input:focus {
+  border-color: var(--gold-border);
+}
+
+.alert-select { flex: 2; min-width: 120px; }
+.alert-input { flex: 2; min-width: 100px; }
+
+.alert-select option { background: var(--bg3); }
+
+.add-alert-btn {
+  flex: 1;
+  min-width: 80px;
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-alert-btn:hover { background: rgba(201,168,76,0.25); }
+
+.alert-list { display: flex; flex-direction: column; gap: 6px; }
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text2);
+  border-left: 2px solid var(--gold-border);
+}
+
+.alert-item.triggered {
+  border-left-color: var(--up);
+  background: rgba(76,175,122,0.08);
+  color: var(--up);
+  animation: pulse 1s ease 3;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.del-alert {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.del-alert:hover { color: var(--down); }
+
+.alert-empty { font-size: 11px; color: var(--text3); text-align: center; padding: 8px; }
+
+/* ─── Ticker bar (tab-away indicator) ─── */
+.status-bar {
+  font-size: 10px;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bg3);
+  letter-spacing: 1px;
+}
+
+.dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--up);
+  margin-right: 6px;
+  animation: blink 2s ease infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg3);
+  border: 1px solid var(--gold-border);
+  color: var(--gold-light);
+  font-size: 13px;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  z-index: 999;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ─── Alert Sound Overlay ─── */
+.alert-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert-overlay.show { display: flex; }
+
+.alert-box {
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+}
+
+.alert-box-icon { font-size: 40px; margin-bottom: 12px; }
+.alert-box-title { font-family: 'Noto Serif SC', serif; font-size: 18px; color: var(--gold-light); margin-bottom: 8px; }
+.alert-box-msg { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; }
+.alert-close-btn {
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 520px) {
+  header { padding: 10px 14px; }
+  .logo-text { font-size: 13px; }
+  main { padding: 16px 12px 40px; }
+
+  .intl-grid { grid-template-columns: 1fr; }
+  .price-grid { grid-template-columns: 1fr 1fr; }
+  .card-price { font-size: 20px; }
+
+  .etf-grid { grid-template-columns: 1fr 1fr; }
+  .etf-price { font-size: 17px; }
+
+  .bank-row { grid-template-columns: 1.2fr 1fr 0.8fr 0.8fr; gap: 4px; padding: 10px 12px; }
+  .bank-name { font-size: 11px; }
+  .bank-buy { font-size: 12px; }
+
+  .jewelry-grid { grid-template-columns: 1fr 1fr; }
+  .jewelry-price { font-size: 17px; }
+
+  .alert-form { flex-direction: column; }
+  .alert-select, .alert-input, .add-alert-btn { width: 100%; }
+
+  .chart-wrap { height: 150px; }
+  .last-update { display: none; }
+}
+
+@media (max-width: 360px) {
+  .price-grid { grid-template-columns: 1fr; }
+  .etf-grid { grid-template-columns: 1fr; }
+  .jewelry-grid { grid-template-columns: 1fr; }
+  .bank-row { grid-template-columns: 1fr 1fr; }
+  .bank-diff, .bank-link { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">金</div>
+    <div class="logo-text">黄金行情</div>
+  </div>
+  <div class="header-right">
+    <div class="last-update">
+      <span id="update-time">--:--:--</span>
+      最近更新
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()">
+      <svg class="refresh-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+        <path d="M8 16H3v5"/>
+      </svg>
+      刷新
+    </button>
+  </div>
+</header>
+
+<!-- Main -->
+<main>
+
+  <!-- ① 国际金价 -->
+  <div class="section-label">国际金价</div>
+  <div class="intl-grid">
+    <div class="price-card" id="card-usd">
+      <div class="card-label">现货金 · 美元</div>
+      <div class="card-price loading" id="price-usd">加载中…</div>
+      <div class="card-change neutral" id="change-usd">--</div>
+      <div class="card-sub" id="sub-usd">每金衡盎司</div>
+    </div>
+    <div class="price-card" id="card-cny">
+      <div class="card-label">现货金 · 人民币</div>
+      <div class="card-price loading" id="price-cny">加载中…</div>
+      <div class="card-change neutral" id="change-cny">--</div>
+      <div class="card-sub" id="sub-cny">每金衡盎司</div>
+    </div>
+    <div class="price-card wide" id="card-gram">
+      <div class="card-label">每克单价参考（人民币）</div>
+      <div style="display:flex; gap:24px; flex-wrap:wrap; margin-top:4px;">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">24K 纯金</div>
+          <div class="card-price" id="price-gram24" style="font-size:20px;">--</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">22K 金</div>
+          <div class="card-price" id="price-gram22" style="font-size:20px;">--</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">18K 金</div>
+          <div class="card-price" id="price-gram18" style="font-size:20px;">--</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">今日最高</div>
+          <div class="card-price" id="price-high" style="font-size:20px;color:var(--up);">--</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">今日最低</div>
+          <div class="card-price" id="price-low" style="font-size:20px;color:var(--down);">--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 走势图 -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <span class="chart-title">价格走势</span>
+      <div class="chart-tabs">
+        <button class="chart-tab active" onclick="switchChart('usd',this)">USD/oz</button>
+        <button class="chart-tab" onclick="switchChart('cny_gram',this)">CNY/克</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="priceChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ② 国内金价 -->
+  <div class="section-label">国内金价</div>
+  <div class="price-grid">
+    <div class="price-card" id="card-au9999">
+      <div class="card-label">AU9999 · 上海金</div>
+      <div class="card-price loading" id="price-au9999">加载中…</div>
+      <div class="card-change neutral" id="change-au9999">--</div>
+      <div class="card-sub">元/克</div>
+    </div>
+    <div class="price-card" id="card-au9995">
+      <div class="card-label">AU9995 · 标准金</div>
+      <div class="card-price loading" id="price-au9995">加载中…</div>
+      <div class="card-change neutral" id="change-au9995">--</div>
+      <div class="card-sub">元/克</div>
+    </div>
+    <div class="price-card" id="card-autn">
+      <div class="card-label">Au(T+N) · 延期交割</div>
+      <div class="card-price loading" id="price-autn">加载中…</div>
+      <div class="card-change neutral" id="change-autn">--</div>
+      <div class="card-sub">元/克</div>
+    </div>
+    <div class="price-card" id="card-shau">
+      <div class="card-label">SHAU · 上海金基准</div>
+      <div class="card-price loading" id="price-shau">加载中…</div>
+      <div class="card-change neutral" id="change-shau">--</div>
+      <div class="card-sub">元/克</div>
+    </div>
+  </div>
+
+  <!-- ③ 银行积存金 -->
+  <div class="section-label">银行积存金 · 参考报价</div>
+  <div class="bank-table">
+    <div class="bank-row header">
+      <span>银行</span><span>参考买入</span><span>点差</span><span>官方渠道</span>
+    </div>
+    <div class="bank-row" id="bank-icbc">
+      <div class="bank-name">工商银行<br><span style="font-size:9px;color:var(--text3)">如意金积存</span></div>
+      <div class="bank-buy" id="bank-icbc-price">--</div>
+      <div class="bank-diff">+约3元</div>
+      <div class="bank-link"><a href="https://m.icbc.com.cn" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row" id="bank-ccb">
+      <div class="bank-name">建设银行<br><span style="font-size:9px;color:var(--text3)">易存金</span></div>
+      <div class="bank-buy" id="bank-ccb-price">--</div>
+      <div class="bank-diff">+约2元</div>
+      <div class="bank-link"><a href="https://wap.ccb.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row" id="bank-abc">
+      <div class="bank-name">农业银行<br><span style="font-size:9px;color:var(--text3)">存金通</span></div>
+      <div class="bank-buy" id="bank-abc-price">--</div>
+      <div class="bank-diff">+约2.5元</div>
+      <div class="bank-link"><a href="https://mobilebank.abchina.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row" id="bank-boc">
+      <div class="bank-name">中国银行<br><span style="font-size:9px;color:var(--text3)">如意积存金</span></div>
+      <div class="bank-buy" id="bank-boc-price">--</div>
+      <div class="bank-diff">+约3.5元</div>
+      <div class="bank-link"><a href="https://ebsbank.boc.cn" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-note">
+      ※ 参考价 = AU9999 现货价 + 各行固定点差估算，实际成交价以银行 App 当时报价为准。<br>
+      ※ 最小购买量已普遍上调至 1,000–1,500 元/次（2025年数据）。
+    </div>
+  </div>
+
+  <!-- ④ 黄金 ETF -->
+  <div class="section-label">黄金 ETF</div>
+  <div class="etf-grid">
+    <div class="etf-card" id="etf-518880">
+      <div class="etf-name">华安黄金 ETF</div>
+      <div class="etf-code">518880 · SH</div>
+      <div class="etf-price loading" id="etf-518880-price">--</div>
+      <div class="etf-change" id="etf-518880-change">--</div>
+    </div>
+    <div class="etf-card" id="etf-159934">
+      <div class="etf-name">易方达黄金 ETF</div>
+      <div class="etf-code">159934 · SZ</div>
+      <div class="etf-price loading" id="etf-159934-price">--</div>
+      <div class="etf-change" id="etf-159934-change">--</div>
+    </div>
+    <div class="etf-card" id="etf-159937">
+      <div class="etf-name">博时黄金 ETF</div>
+      <div class="etf-code">159937 · SZ</div>
+      <div class="etf-price loading" id="etf-159937-price">--</div>
+      <div class="etf-change" id="etf-159937-change">--</div>
+    </div>
+    <div class="etf-card" id="etf-518850">
+      <div class="etf-name">华夏黄金 ETF</div>
+      <div class="etf-code">518850 · SH</div>
+      <div class="etf-price loading" id="etf-518850-price">--</div>
+      <div class="etf-change" id="etf-518850-change">--</div>
+    </div>
+    <div class="etf-card" id="etf-518680">
+      <div class="etf-name">富国黄金 ETF</div>
+      <div class="etf-code">518680 · SH</div>
+      <div class="etf-price loading" id="etf-518680-price">--</div>
+      <div class="etf-change" id="etf-518680-change">--</div>
+    </div>
+    <div class="etf-card" id="etf-159830">
+      <div class="etf-name">国泰黄金 ETF</div>
+      <div class="etf-code">159830 · SZ</div>
+      <div class="etf-price loading" id="etf-159830-price">--</div>
+      <div class="etf-change" id="etf-159830-change">--</div>
+    </div>
+  </div>
+
+  <!-- ⑤ 零售金饰 -->
+  <div class="section-label">零售金饰 · 参考估价</div>
+  <div class="jewelry-grid">
+    <div class="jewelry-card">
+      <div class="jewelry-brand">周大福 / 老庙 / 六福</div>
+      <div>
+        <span class="jewelry-price" id="jewelry-price">--</span>
+        <span class="jewelry-unit">元/克（参考）</span>
+      </div>
+      <div class="jewelry-note">= 国内金价 × 1.01 + 工费 70–120 元/克<br>品牌溢价另计</div>
+      <div class="jewelry-link">
+        <a href="https://www.chowsangsang.com/cn" target="_blank">周生生官网↗</a>
+        &nbsp;·&nbsp;
+        <a href="https://www.ctl.com.cn" target="_blank">周大福官网↗</a>
+      </div>
+    </div>
+    <div class="jewelry-card">
+      <div class="jewelry-brand">菜百首饰 / 中国黄金</div>
+      <div>
+        <span class="jewelry-price" id="jewelry-price2">--</span>
+        <span class="jewelry-unit">元/克（参考）</span>
+      </div>
+      <div class="jewelry-note">= 国内金价 × 1.01 + 工费 50–80 元/克<br>国内连锁，工费相对较低</div>
+      <div class="jewelry-link">
+        <a href="https://www.cbgold.com.cn" target="_blank">菜百官网↗</a>
+        &nbsp;·&nbsp;
+        <a href="https://www.chngold.com" target="_blank">中国黄金↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ 价格预警 -->
+  <div class="section-label">价格预警</div>
+  <div class="alert-panel">
+    <div class="alert-form">
+      <select class="alert-select" id="alert-type">
+        <option value="usd_oz">国际金价 (USD/oz)</option>
+        <option value="cny_oz">国际金价 (CNY/oz)</option>
+        <option value="au9999">国内 AU9999 (元/克)</option>
+        <option value="etf_518880">华安ETF 518880</option>
+      </select>
+      <select class="alert-select" id="alert-dir" style="flex:1;min-width:90px;">
+        <option value="below">跌破</option>
+        <option value="above">涨过</option>
+      </select>
+      <input class="alert-input" id="alert-value" type="number" placeholder="目标价格" step="0.01">
+      <button class="add-alert-btn" onclick="addAlert()">+ 添加</button>
+    </div>
+    <div class="alert-list" id="alert-list">
+      <div class="alert-empty">暂无预警，添加后将在价格到达时弹窗并响铃</div>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <span class="dot"></span>
+    <span id="status-text">自动刷新每 60 秒 · 网页开启时有效</span>
+  </div>
+
+</main>
+
+<!-- Alert Overlay -->
+<div class="alert-overlay" id="alert-overlay">
+  <div class="alert-box">
+    <div class="alert-box-icon">🔔</div>
+    <div class="alert-box-title">价格预警触发</div>
+    <div class="alert-box-msg" id="alert-msg">--</div>
+    <button class="alert-close-btn" onclick="closeAlertOverlay()">知道了</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────────
+const API_KEY = 'goldapi-990d765996fe397c4f18a7c35ba20be6-io';
+const REFRESH_INTERVAL = 60000; // 60s
+
+// ─── State ────────────────────────────────────────────
+let state = {
+  usd: null, cny: null,
+  au9999: null,
+  etfs: {},
+  cny_gram: null,
+  chartMode: 'usd',
+  chartHistory: { usd: [], cny_gram: [] },
+};
+let alerts = JSON.parse(localStorage.getItem('goldAlerts') || '[]');
+let refreshTimer = null;
+let originalTitle = document.title;
+let titleTickerTimer = null;
+
+// ─── Tab visibility ticker ─────────────────────────────
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    startTitleTicker();
+  } else {
+    stopTitleTicker();
+    document.title = originalTitle;
+  }
+});
+
+function startTitleTicker() {
+  if (titleTickerTimer) return;
+  const msgs = [];
+  if (state.usd) msgs.push(`金 $${state.usd.toFixed(0)}`);
+  if (state.au9999) msgs.push(`沪金 ¥${state.au9999.toFixed(2)}/g`);
+  if (!msgs.length) return;
+  let i = 0;
+  titleTickerTimer = setInterval(() => {
+    document.title = msgs[i % msgs.length] + ' · 黄金行情';
+    i++;
+  }, 2000);
+}
+
+function stopTitleTicker() {
+  if (titleTickerTimer) { clearInterval(titleTickerTimer); titleTickerTimer = null; }
+}
+
+// ─── Refresh Control ──────────────────────────────────
+function setRefreshing(on) {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.toggle('spinning', on);
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('zh-CN', {hour12: false});
+  document.getElementById('update-time').textContent = t;
+}
+
+// ─── Toast ────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── Price Card helpers ───────────────────────────────
+function setCard(id, price, change, changeP, unit='', decimals=2) {
+  const card = document.getElementById('card-'+id);
+  const priceEl = document.getElementById('price-'+id);
+  const changeEl = document.getElementById('change-'+id);
+  if (!priceEl) return;
+  priceEl.textContent = price.toLocaleString('zh-CN', {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) + (unit ? ' '+unit : '');
+  priceEl.classList.remove('loading');
+  const dir = change >= 0 ? 'up' : 'down';
+  const arrow = change >= 0 ? '▲' : '▼';
+  changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(2)} (${Math.abs(changeP).toFixed(2)}%)`;
+  changeEl.className = 'card-change ' + dir;
+  if (card) card.className = 'price-card ' + dir;
+}
+
+function setLoading(ids) {
+  ids.forEach(id => {
+    const el = document.getElementById('price-'+id);
+    if (el) { el.textContent = '加载中…'; el.classList.add('loading'); }
+    const ce = document.getElementById('change-'+id);
+    if (ce) { ce.textContent = '--'; ce.className = 'card-change neutral'; }
+  });
+}
+
+// ─── ETF helpers ─────────────────────────────────────
+function setETF(code, price, change, changeP) {
+  const card = document.getElementById('etf-'+code);
+  const priceEl = document.getElementById('etf-'+code+'-price');
+  const changeEl = document.getElementById('etf-'+code+'-change');
+  if (!priceEl) return;
+  priceEl.textContent = price.toFixed(4);
+  priceEl.classList.remove('loading');
+  const dir = change >= 0 ? 'up' : 'down';
+  const arrow = change >= 0 ? '▲' : '▼';
+  changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(4)} (${Math.abs(changeP).toFixed(2)}%)`;
+  changeEl.className = 'etf-change ' + dir;
+  if (card) { card.className = 'etf-card ' + dir; }
+  state.etfs[code] = price;
+}
+
+// ─── Fetch International Gold (GoldAPI — direct HTTPS, no proxy needed) ──
+async function fetchInternational() {
+  try {
+    const [resUSD, resCNY] = await Promise.all([
+      fetch('https://www.goldapi.io/api/XAU/USD', {
+        headers: { 'x-access-token': API_KEY, 'Content-Type': 'application/json' }
+      }),
+      fetch('https://www.goldapi.io/api/XAU/CNY', {
+        headers: { 'x-access-token': API_KEY, 'Content-Type': 'application/json' }
+      }),
+    ]);
+    if (!resUSD.ok) throw new Error('GoldAPI ' + resUSD.status);
+    const [dUSD, dCNY] = await Promise.all([resUSD.json(), resCNY.json()]);
+
+    if (dUSD && dUSD.price) {
+      state.usd = dUSD.price;
+      setCard('usd', dUSD.price, dUSD.ch || 0, dUSD.chp || 0, 'USD', 2);
+      document.getElementById('price-high').textContent =
+        '$' + (dUSD.high_price || dUSD.price).toLocaleString('en-US', {maximumFractionDigits: 2});
+      document.getElementById('price-low').textContent =
+        '$' + (dUSD.low_price || dUSD.price).toLocaleString('en-US', {maximumFractionDigits: 2});
+    }
+
+    if (dCNY && dCNY.price) {
+      state.cny = dCNY.price;
+      setCard('cny', dCNY.price, dCNY.ch || 0, dCNY.chp || 0, 'CNY', 2);
+
+      const g24 = dCNY.price_gram_24k;
+      const g22 = dCNY.price_gram_22k;
+      const g18 = dCNY.price_gram_18k;
+      state.cny_gram = g24;
+
+      if (g24) document.getElementById('price-gram24').textContent = '¥' + g24.toFixed(2);
+      if (g22) document.getElementById('price-gram22').textContent = '¥' + g22.toFixed(2);
+      if (g18) document.getElementById('price-gram18').textContent = '¥' + g18.toFixed(2);
+
+      const now = new Date();
+      state.chartHistory.usd.push({ t: now, v: dUSD.price });
+      state.chartHistory.cny_gram.push({ t: now, v: g24 });
+      if (state.chartHistory.usd.length > 30) state.chartHistory.usd.shift();
+      if (state.chartHistory.cny_gram.length > 30) state.chartHistory.cny_gram.shift();
+      updateChart();
+
+      if (g24) {
+        document.getElementById('jewelry-price').textContent = (g24 * 1.01 + 95).toFixed(0);
+        document.getElementById('jewelry-price2').textContent = (g24 * 1.01 + 65).toFixed(0);
+      }
+    }
+
+    checkAlerts();
+  } catch (e) {
+    console.error('International fetch error:', e);
+    showToast('国际金价获取失败，请检查网络后手动刷新');
+  }
+}
+
+// ─── Fetch Domestic gold — Tencent API ───────────────
+async function fetchDomestic() {
+  const items = [
+    { id: 'nh_Au9999',   key: 'au9999' },
+    { id: 'nh_Au9995',   key: 'au9995' },
+    { id: 'nh_Au(T+N1)', key: 'autn'   },
+    { id: 'nh_SHAU',     key: 'shau'   },
+  ];
+  const queryStr = items.map(x => x.id).join(',');
+
+  try {
+    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+
+    lines.forEach((line, i) => {
+      const match = line.match(/"([^"]+)"/);
+      if (!match || !items[i]) return;
+      const parts = match[1].split('~');
+      const price = parseFloat(parts[3]);
+      const change = parseFloat(parts[4]);
+      const changeP = parseFloat(parts[5]);
+      if (isNaN(price) || price <= 0) return;
+      if (items[i].key === 'au9999') state.au9999 = price;
+      setCard(items[i].key, price, change || 0, changeP || 0);
+      if (items[i].key === 'au9999') updateBankPrices(price);
+    });
+  } catch(e) {
+    console.warn('Domestic fetch failed, using CNY gram fallback:', e);
+    if (state.cny_gram) {
+      const approx = state.cny_gram;
+      setCard('au9999', approx, 0, 0);
+      setCard('au9995', approx * 0.9995, 0, 0);
+      setCard('autn',   approx * 1.001,  0, 0);
+      setCard('shau',   approx,          0, 0);
+      state.au9999 = approx;
+      updateBankPrices(approx);
+    }
+  }
+}
+
+function updateBankPrices(base) {
+  const spreads = { icbc: 3, ccb: 2, abc: 2.5, boc: 3.5 };
+  Object.entries(spreads).forEach(([k, spread]) => {
+    const el = document.getElementById('bank-' + k + '-price');
+    if (el) el.textContent = '¥' + (base + spread).toFixed(2);
+  });
+}
+
+// ─── Fetch ETFs — Tencent API ─────────────────────────
+async function fetchETFs() {
+  const etfList = [
+    { code: '518880', prefix: 'sh' },
+    { code: '159934', prefix: 'sz' },
+    { code: '159937', prefix: 'sz' },
+    { code: '518850', prefix: 'sh' },
+    { code: '518680', prefix: 'sh' },
+    { code: '159830', prefix: 'sz' },
+  ];
+  const queryStr = etfList.map(e => e.prefix + e.code).join(',');
+
+  try {
+    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`);
+    const text = await res.text();
+    const lines = text.trim().split('\n');
+
+    lines.forEach((line, i) => {
+      const match = line.match(/"([^"]+)"/);
+      if (!match || !etfList[i]) return;
+      const parts = match[1].split('~');
+      const price   = parseFloat(parts[3]);
+      const change  = parseFloat(parts[31]) || parseFloat(parts[4]);
+      const changeP = parseFloat(parts[32]) || parseFloat(parts[5]);
+      if (isNaN(price) || price === 0) return;
+      setETF(etfList[i].code, price, change || 0, changeP || 0);
+    });
+  } catch(e) {
+    console.warn('ETF fetch error:', e);
+  }
+}
+
+// ─── Chart ────────────────────────────────────────────
+let chart = null;
+
+function initChart() {
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'USD/oz',
+        data: [],
+        borderColor: '#C9A84C',
+        borderWidth: 1.5,
+        pointRadius: 2,
+        pointBackgroundColor: '#C9A84C',
+        fill: true,
+        backgroundColor: 'rgba(201,168,76,0.06)',
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1A1A1A',
+        borderColor: 'rgba(201,168,76,0.3)',
+        borderWidth: 1,
+        titleColor: '#9A9080',
+        bodyColor: '#E8C96A',
+        titleFont: { family: 'DM Mono', size: 10 },
+        bodyFont: { family: 'DM Mono', size: 13, weight: '500' },
+      }},
+      scales: {
+        x: { ticks: { color: '#5A5248', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 6 },
+             grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#5A5248', font: { family: 'DM Mono', size: 10 } },
+             grid: { color: 'rgba(255,255,255,0.04)' } },
+      }
+    }
+  });
+}
+
+function switchChart(mode, btn) {
+  state.chartMode = mode;
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  updateChart();
+}
+
+function updateChart() {
+  if (!chart) return;
+  const data = state.chartHistory[state.chartMode];
+  chart.data.labels = data.map(d => d.t.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'}));
+  chart.data.datasets[0].data = data.map(d => d.v);
+  chart.data.datasets[0].label = state.chartMode === 'usd' ? 'USD/oz' : 'CNY/克';
+  chart.update('none');
+}
+
+// ─── Alerts ───────────────────────────────────────────
+function renderAlerts() {
+  const list = document.getElementById('alert-list');
+  if (alerts.length === 0) {
+    list.innerHTML = '<div class="alert-empty">暂无预警，添加后将在价格到达时弹窗并响铃</div>';
+    return;
+  }
+  list.innerHTML = alerts.map((a, i) => {
+    const dirLabel = a.dir === 'above' ? '涨过' : '跌破';
+    const typeLabels = {
+      usd_oz: 'USD/oz', cny_oz: 'CNY/oz',
+      au9999: 'AU9999/克', etf_518880: 'ETF 518880'
+    };
+    return `<div class="alert-item" id="alert-item-${i}">
+      <span>${typeLabels[a.type]||a.type} ${dirLabel} <strong>${a.value}</strong></span>
+      <button class="del-alert" onclick="removeAlert(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function addAlert() {
+  const type = document.getElementById('alert-type').value;
+  const dir = document.getElementById('alert-dir').value;
+  const val = parseFloat(document.getElementById('alert-value').value);
+  if (!val || isNaN(val)) { showToast('请输入有效的目标价格'); return; }
+  alerts.push({ type, dir, value: val, triggered: false });
+  localStorage.setItem('goldAlerts', JSON.stringify(alerts));
+  document.getElementById('alert-value').value = '';
+  renderAlerts();
+  showToast('预警已添加');
+}
+
+function removeAlert(i) {
+  alerts.splice(i, 1);
+  localStorage.setItem('goldAlerts', JSON.stringify(alerts));
+  renderAlerts();
+}
+
+function checkAlerts() {
+  const priceMap = {
+    usd_oz: state.usd,
+    cny_oz: state.cny,
+    au9999: state.au9999,
+    etf_518880: state.etfs['518880'],
+  };
+  alerts.forEach((a, i) => {
+    if (a.triggered) return;
+    const current = priceMap[a.type];
+    if (!current) return;
+    const hit = a.dir === 'above' ? current >= a.value : current <= a.value;
+    if (!hit) return;
+
+    a.triggered = true;
+    const el = document.getElementById('alert-item-'+i);
+    if (el) el.classList.add('triggered');
+    triggerAlert(a, current);
+  });
+  localStorage.setItem('goldAlerts', JSON.stringify(alerts));
+}
+
+function triggerAlert(a, current) {
+  const typeLabels = {
+    usd_oz: '国际金价 (USD/oz)', cny_oz: '国际金价 (CNY/oz)',
+    au9999: '国内 AU9999 (元/克)', etf_518880: '华安ETF 518880'
+  };
+  const dirLabel = a.dir === 'above' ? '已涨过' : '已跌破';
+  const msg = `${typeLabels[a.type]||a.type}\n当前 ${current.toFixed(2)}，${dirLabel}目标价 ${a.value}`;
+  document.getElementById('alert-msg').textContent = msg;
+  document.getElementById('alert-overlay').classList.add('show');
+  playAlertSound();
+
+  // Also update title if page is hidden
+  if (document.hidden) {
+    stopTitleTicker();
+    let c = 0;
+    titleTickerTimer = setInterval(() => {
+      document.title = c % 2 === 0 ? '🔔 价格预警！' : originalTitle;
+      c++;
+    }, 800);
+  }
+}
+
+function closeAlertOverlay() {
+  document.getElementById('alert-overlay').classList.remove('show');
+}
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = [880, 1100, 880, 1100];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.15);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.2);
+    });
+  } catch(e) { console.warn('Audio not available'); }
+}
+
+// ─── Main Refresh ─────────────────────────────────────
+async function refreshAll() {
+  setRefreshing(true);
+  document.getElementById('status-text').textContent = '正在刷新…';
+
+  await Promise.allSettled([
+    fetchInternational(),
+    fetchDomestic(),
+    fetchETFs(),
+  ]);
+
+  updateTimestamp();
+  setRefreshing(false);
+  document.getElementById('status-text').textContent = '自动刷新每 60 秒 · 网页开启时有效';
+
+  // Restart ticker if page is hidden
+  if (document.hidden) { stopTitleTicker(); startTitleTicker(); }
+}
+
+// ─── Auto refresh ─────────────────────────────────────
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
+}
+
+// ─── Init ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  initChart();
+  renderAlerts();
+  refreshAll();
+  startAutoRefresh();
+});
+</script>
+</body>
+</html>
