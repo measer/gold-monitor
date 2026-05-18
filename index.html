@@ -356,9 +356,56 @@ main {
 .bank-note {
   font-size: 10px;
   color: var(--text3);
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-top: 1px solid var(--bg3);
-  line-height: 1.6;
+  line-height: 1.8;
+}
+
+.bank-formula-box {
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-left: 2px solid var(--gold-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 10px 16px;
+  font-size: 11px;
+  line-height: 2;
+}
+
+.bank-formula-box .formula-title {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.bank-formula-box .formula-line {
+  color: var(--text2);
+  font-family: 'DM Mono', monospace;
+}
+
+.bank-formula-box .formula-line .hl {
+  color: var(--gold-light);
+  font-weight: 500;
+}
+
+.bank-formula-box .formula-line .src {
+  color: var(--text3);
+  font-size: 10px;
+}
+
+.bank-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: var(--text3);
+  background: var(--bg4);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 /* ─── Jewelry Section ─── */
@@ -718,35 +765,90 @@ main {
   <div class="section-label">银行积存金 · 参考报价</div>
   <div class="bank-table">
     <div class="bank-row header">
-      <span>银行</span><span>参考买入</span><span>点差</span><span>官方渠道</span>
+      <span>银行 · 产品</span><span>参考买入</span><span>点差/手续费</span><span>官方渠道</span>
     </div>
-    <div class="bank-row" id="bank-icbc">
+    <div class="bank-row">
       <div class="bank-name">工商银行<br><span style="font-size:9px;color:var(--text3)">如意金积存</span></div>
       <div class="bank-buy" id="bank-icbc-price">--</div>
-      <div class="bank-diff">+约3元</div>
+      <div class="bank-diff">买卖差约3元/克</div>
       <div class="bank-link"><a href="https://m.icbc.com.cn" target="_blank">前往↗</a></div>
     </div>
-    <div class="bank-row" id="bank-ccb">
-      <div class="bank-name">建设银行<br><span style="font-size:9px;color:var(--text3)">易存金</span></div>
+    <div class="bank-row">
+      <div class="bank-name">建设银行<br><span style="font-size:9px;color:var(--text3)">建行金·易存金</span></div>
       <div class="bank-buy" id="bank-ccb-price">--</div>
-      <div class="bank-diff">+约2元</div>
+      <div class="bank-diff">买卖差约3元/克</div>
       <div class="bank-link"><a href="https://wap.ccb.com" target="_blank">前往↗</a></div>
     </div>
-    <div class="bank-row" id="bank-abc">
+    <div class="bank-row">
       <div class="bank-name">农业银行<br><span style="font-size:9px;color:var(--text3)">存金通</span></div>
       <div class="bank-buy" id="bank-abc-price">--</div>
-      <div class="bank-diff">+约2.5元</div>
+      <div class="bank-diff">买卖差约2.5元/克</div>
       <div class="bank-link"><a href="https://mobilebank.abchina.com" target="_blank">前往↗</a></div>
     </div>
-    <div class="bank-row" id="bank-boc">
-      <div class="bank-name">中国银行<br><span style="font-size:9px;color:var(--text3)">如意积存金</span></div>
+    <div class="bank-row">
+      <div class="bank-name">中国银行<br><span style="font-size:9px;color:var(--text3)">积存金</span></div>
       <div class="bank-buy" id="bank-boc-price">--</div>
-      <div class="bank-diff">+约3.5元</div>
+      <div class="bank-diff">买卖差约4元/克</div>
       <div class="bank-link"><a href="https://ebsbank.boc.cn" target="_blank">前往↗</a></div>
     </div>
+    <div class="bank-row">
+      <div class="bank-name">交通银行<br><span style="font-size:9px;color:var(--text3)">贵金属钱包·囤金宝</span></div>
+      <div class="bank-buy" id="bank-bocom-price">--</div>
+      <div class="bank-diff">买卖差约3元/克</div>
+      <div class="bank-link"><a href="https://m.bankcomm.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row">
+      <div class="bank-name">邮储银行<br><span style="font-size:9px;color:var(--text3)">黄金积存</span></div>
+      <div class="bank-buy" id="bank-psbc-price">--</div>
+      <div class="bank-diff">买卖差约3元/克</div>
+      <div class="bank-link"><a href="https://msb.psbc.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row">
+      <div class="bank-name">招商银行<br><span style="font-size:9px;color:var(--text3)">黄金活期</span></div>
+      <div class="bank-buy" id="bank-cmb-price">--</div>
+      <div class="bank-diff">买卖差约5元/克</div>
+      <div class="bank-link"><a href="https://m.cmbchina.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row">
+      <div class="bank-name">兴业银行<br><span style="font-size:9px;color:var(--text3)">黄金积存</span></div>
+      <div class="bank-buy" id="bank-cib-price">--</div>
+      <div class="bank-diff">买卖差约3元/克</div>
+      <div class="bank-link"><a href="https://mbank.cib.com.cn" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row">
+      <div class="bank-name">浙商银行<br><span style="font-size:9px;color:var(--text3)">财富金积存</span></div>
+      <div class="bank-buy" id="bank-czb-price">--</div>
+      <div class="bank-diff">卖出手续费0.4%</div>
+      <div class="bank-link"><a href="https://mbank.czbank.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-row">
+      <div class="bank-name">光大银行<br><span style="font-size:9px;color:var(--text3)">黄金积存</span></div>
+      <div class="bank-buy" id="bank-ceb-price">--</div>
+      <div class="bank-diff">买卖差约3元/克</div>
+      <div class="bank-link"><a href="https://m.cebbank.com" target="_blank">前往↗</a></div>
+    </div>
+    <div class="bank-formula-box">
+      <div class="formula-title">参考价计算公式</div>
+      <div class="formula-line">
+        <span class="hl">参考买入价</span>
+        = <span class="hl" id="bank-formula-base">--</span> <span class="src">（AU9999 现货价，元/克）</span>
+        + <span class="hl" id="bank-formula-spread">各行点差</span>
+      </div>
+      <div class="formula-line">
+        <span class="hl">浙商银行</span>
+        = <span class="hl" id="bank-formula-czb">--</span> <span class="src">（AU9999 × 1.004，含 0.4% 卖出手续费估算）</span>
+      </div>
+      <div style="margin-top:6px;font-size:10px;color:var(--text3);line-height:1.7;">
+        数据来源：AU9999 现货价取自
+        <span class="bank-source-badge">腾讯证券 qt.gtimg.cn</span>
+        实时行情，点差参考各行公告披露数据。<br>
+        点差会随金价波动<strong style="color:var(--text2)">动态调整</strong>，以下为近期固定手续费参考值，非实时买卖价差。<br>
+        <strong style="color:var(--gold)">⚠ 实际成交价以各行 App 当时报价为准，本页仅供参考。</strong>
+      </div>
+    </div>
     <div class="bank-note">
-      ※ 参考价 = AU9999 现货价 + 各行固定点差估算，实际成交价以银行 App 当时报价为准。<br>
-      ※ 最小购买量已普遍上调至 1,000–1,500 元/次（2025年数据）。
+      ※ 各行起购门槛约 700–1,000 元/次（随金价上调动态调整）。<br>
+      ※ 浙商银行 10 克起可兑换实物黄金；工商银行需 20 克起。
     </div>
   </div>
 
@@ -1034,6 +1136,10 @@ async function fetchInternational() {
     document.getElementById('jewelry-price').textContent  = (g24 * 1.01 + 95).toFixed(0);
     document.getElementById('jewelry-price2').textContent = (g24 * 1.01 + 65).toFixed(0);
 
+    // Safety net: if domestic fetch hasn't run yet, populate bank prices from cny_gram
+    if (state.cny_gram && (!state.au9999)) {
+      updateBankPrices(state.cny_gram);
+    }
     checkAlerts();
   } catch (e) {
     console.error('International fetch error:', e);
@@ -1084,10 +1190,45 @@ async function fetchDomestic() {
 }
 
 function updateBankPrices(base) {
-  const spreads = { icbc: 3, ccb: 2, abc: 2.5, boc: 3.5 };
-  Object.entries(spreads).forEach(([k, spread]) => {
+  if (!base || base <= 0) return;
+
+  // Update formula display
+  const baseEl = document.getElementById('bank-formula-base');
+  const czbEl  = document.getElementById('bank-formula-czb');
+  if (baseEl) baseEl.textContent = base.toFixed(2);
+  if (czbEl)  czbEl.textContent  = (base * 1.004).toFixed(2);
+
+  // Indicate data source in formula
+  const srcLabel = state.au9999 ? 'AU9999 现货价（腾讯证券实时）' : 'AU9999 估算价（国际金价换算）';
+  const spreadEl = document.getElementById('bank-formula-spread');
+  if (spreadEl) spreadEl.title = srcLabel;
+
+  // spread = typical buy-side markup above AU9999 spot
+  // 浙商: 0.4% sell fee → estimate buy price as base * 1.004
+  const banks = {
+    icbc:  { spread: 3,    pct: false },
+    ccb:   { spread: 3,    pct: false },
+    abc:   { spread: 2.5,  pct: false },
+    boc:   { spread: 4,    pct: false },
+    bocom: { spread: 3,    pct: false },
+    psbc:  { spread: 3,    pct: false },
+    cmb:   { spread: 5,    pct: false },
+    cib:   { spread: 3,    pct: false },
+    czb:   { spread: null, pct: true  },
+    ceb:   { spread: 3,    pct: false },
+  };
+  Object.entries(banks).forEach(([k, cfg]) => {
     const el = document.getElementById('bank-' + k + '-price');
-    if (el) el.textContent = '¥' + (base + spread).toFixed(2);
+    if (!el) return;
+    const price = cfg.pct ? (base * 1.004) : (base + cfg.spread);
+    el.textContent = '¥' + price.toFixed(2);
+  });
+
+  // Add data source indicator suffix if using estimated price
+  const suffix = state.au9999 ? '' : ' *';
+  Object.keys(banks).forEach(k => {
+    const el = document.getElementById('bank-' + k + '-price');
+    if (el && suffix) el.title = '基于国际金价估算，非实时上海金数据';
   });
 }
 
