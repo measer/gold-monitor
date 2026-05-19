@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>黄金行情</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥇</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -435,6 +436,101 @@ main {
   transition: border-color 0.15s;
 }
 .jewelry-link a:hover { border-color: var(--gold); }
+
+/* ─── Platform Cards ─── */
+.platform-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.platform-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.platform-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.platform-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.platform-tag {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.platform-tag.etf    { background: rgba(76,175,122,0.12); color: var(--up); border: 1px solid rgba(76,175,122,0.25); }
+.platform-tag.bank   { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
+.platform-tag.fund   { background: rgba(100,149,237,0.12); color: #6495ED; border: 1px solid rgba(100,149,237,0.25); }
+.platform-tag.retail { background: rgba(180,130,80,0.12); color: #C8935A; border: 1px solid rgba(180,130,80,0.25); }
+
+.platform-rows { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+
+.platform-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+}
+
+.platform-row-label { color: var(--text3); }
+.platform-row-val   { color: var(--text2); font-weight: 500; }
+.platform-row-val.warn { color: var(--gold); }
+
+.platform-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.platform-note { font-size: 10px; color: var(--text3); line-height: 1.5; flex: 1; }
+
+.platform-btn {
+  font-size: 10px;
+  color: var(--gold);
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid var(--gold-border);
+  border-radius: 4px;
+  white-space: nowrap;
+  transition: all 0.15s;
+  margin-left: 10px;
+}
+
+.platform-btn:hover { background: var(--gold-dim); }
+
+.platform-no-api {
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--bg3);
+  border: 1px dashed var(--bg4);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+@media (max-width: 520px) {
+  .platform-grid { grid-template-columns: 1fr; }
+}
 
 /* ─── Alert Panel ─── */
 .alert-panel {
@@ -917,7 +1013,135 @@ main {
     </div>
   </div>
 
-  <!-- ⑥ 价格预警 -->
+  <!-- ⑥ 平台终端报价入口 -->
+  <div class="section-label">平台终端报价 · 快速入口</div>
+
+  <div class="platform-no-api" style="margin-bottom:10px;">
+    ℹ️ 以下各平台均无公开接口，实时报价需在对应 App 内查看。此处提供底层资产、费率、规则等关键信息对比，帮助你快速判断后直达目标平台。
+  </div>
+
+  <div class="platform-grid">
+
+    <div class="platform-card">
+      <div class="platform-header">
+        <div class="platform-name">支付宝「攒黄金」</div>
+        <div class="platform-tag etf">ETF 型</div>
+      </div>
+      <div class="platform-rows">
+        <div class="platform-row"><span class="platform-row-label">底层资产</span><span class="platform-row-val">华安黄金 ETF（518880）</span></div>
+        <div class="platform-row"><span class="platform-row-label">报价依据</span><span class="platform-row-val">ETF 实时交易价</span></div>
+        <div class="platform-row"><span class="platform-row-label">买入费率</span><span class="platform-row-val warn">0.2%（部分活动免佣）</span></div>
+        <div class="platform-row"><span class="platform-row-label">卖出费率</span><span class="platform-row-val warn">0.2%</span></div>
+        <div class="platform-row"><span class="platform-row-label">最低买入</span><span class="platform-row-val">1 元起</span></div>
+        <div class="platform-row"><span class="platform-row-label">交易时段</span><span class="platform-row-val">工作日 09:30–15:00</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">不支持</span></div>
+      </div>
+      <div class="platform-footer">
+        <div class="platform-note">价格 = ETF 实时价，与 AU9999 现货略有偏差（ETF 有溢折价）</div>
+        <a class="platform-btn" href="alipays://platformapi/startapp?appId=68687143" target="_blank">打开↗</a>
+      </div>
+    </div>
+
+    <div class="platform-card">
+      <div class="platform-header">
+        <div class="platform-name">微信「黄金」</div>
+        <div class="platform-tag bank">积存金型</div>
+      </div>
+      <div class="platform-rows">
+        <div class="platform-row"><span class="platform-row-label">底层资产</span><span class="platform-row-val">招商银行积存金</span></div>
+        <div class="platform-row"><span class="platform-row-label">报价依据</span><span class="platform-row-val">招行实时报价</span></div>
+        <div class="platform-row"><span class="platform-row-label">买卖价差</span><span class="platform-row-val warn">约 5 元/克</span></div>
+        <div class="platform-row"><span class="platform-row-label">最低买入</span><span class="platform-row-val">0.01 克起</span></div>
+        <div class="platform-row"><span class="platform-row-label">交易时段</span><span class="platform-row-val">工作日全天（含夜盘）</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">满 50 克可提</span></div>
+      </div>
+      <div class="platform-footer">
+        <div class="platform-note">招行价差在各行中偏高；微信入口便捷但费用略贵</div>
+        <a class="platform-btn" href="https://we.qq.com/p/wx4b0e60028b40f3b6" target="_blank">打开↗</a>
+      </div>
+    </div>
+
+    <div class="platform-card">
+      <div class="platform-header">
+        <div class="platform-name">京东「京东金融·黄金」</div>
+        <div class="platform-tag etf">ETF 型</div>
+      </div>
+      <div class="platform-rows">
+        <div class="platform-row"><span class="platform-row-label">底层资产</span><span class="platform-row-val">博时/易方达黄金 ETF</span></div>
+        <div class="platform-row"><span class="platform-row-label">报价依据</span><span class="platform-row-val">ETF 实时交易价</span></div>
+        <div class="platform-row"><span class="platform-row-label">买入费率</span><span class="platform-row-val warn">0.1%–0.2%</span></div>
+        <div class="platform-row"><span class="platform-row-label">卖出费率</span><span class="platform-row-val warn">0.1%–0.2%</span></div>
+        <div class="platform-row"><span class="platform-row-label">最低买入</span><span class="platform-row-val">1 元起</span></div>
+        <div class="platform-row"><span class="platform-row-label">交易时段</span><span class="platform-row-val">工作日 09:30–15:00</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">不支持</span></div>
+      </div>
+      <div class="platform-footer">
+        <div class="platform-note">费率与支付宝相近，ETF 型价格更贴近国际金价</div>
+        <a class="platform-btn" href="https://m.jd.com/product/gold.html" target="_blank">打开↗</a>
+      </div>
+    </div>
+
+    <div class="platform-card">
+      <div class="platform-header">
+        <div class="platform-name">天天基金「黄金基金」</div>
+        <div class="platform-tag fund">基金型</div>
+      </div>
+      <div class="platform-rows">
+        <div class="platform-row"><span class="platform-row-label">底层资产</span><span class="platform-row-val">黄金 ETF 联接基金</span></div>
+        <div class="platform-row"><span class="platform-row-label">报价依据</span><span class="platform-row-val">T+1 日净值（次日确认）</span></div>
+        <div class="platform-row"><span class="platform-row-label">申购费率</span><span class="platform-row-val warn">0.1%（天天基金折扣后）</span></div>
+        <div class="platform-row"><span class="platform-row-label">赎回费率</span><span class="platform-row-val warn">0%–0.5%（持有时长递减）</span></div>
+        <div class="platform-row"><span class="platform-row-label">最低申购</span><span class="platform-row-val">10 元起</span></div>
+        <div class="platform-row"><span class="platform-row-label">到账时间</span><span class="platform-row-val">T+1 日净值，T+2 到账</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">不支持</span></div>
+      </div>
+      <div class="platform-footer">
+        <div class="platform-note">非实时价格，按次日净值成交；适合长期定投，不适合短线</div>
+        <a class="platform-btn" href="https://m.1234567.com.cn" target="_blank">打开↗</a>
+      </div>
+    </div>
+
+    <div class="platform-card">
+      <div class="platform-header">
+        <div class="platform-name">工商银行 App「如意金」</div>
+        <div class="platform-tag bank">积存金型</div>
+      </div>
+      <div class="platform-rows">
+        <div class="platform-row"><span class="platform-row-label">底层资产</span><span class="platform-row-val">上海金 AU9999 现货</span></div>
+        <div class="platform-row"><span class="platform-row-label">买卖价差</span><span class="platform-row-val warn">约 3 元/克</span></div>
+        <div class="platform-row"><span class="platform-row-label">最低买入</span><span class="platform-row-val">约 700–1,000 元/次</span></div>
+        <div class="platform-row"><span class="platform-row-label">交易时段</span><span class="platform-row-val">工作日全天（含夜盘）</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">满 20 克可提</span></div>
+        <div class="platform-row"><span class="platform-row-label">利息</span><span class="platform-row-val">无</span></div>
+      </div>
+      <div class="platform-footer">
+        <div class="platform-note">国有大行，可提实物，安全性高；报价最贴近 AU9999 现货</div>
+        <a class="platform-btn" href="https://m.icbc.com.cn" target="_blank">打开↗</a>
+      </div>
+    </div>
+
+    <div class="platform-card">
+      <div class="platform-header">
+        <div class="platform-name">浙商银行 App「财富金」</div>
+        <div class="platform-tag bank">积存金型</div>
+      </div>
+      <div class="platform-rows">
+        <div class="platform-row"><span class="platform-row-label">底层资产</span><span class="platform-row-val">上海金 AU9999 现货</span></div>
+        <div class="platform-row"><span class="platform-row-label">费率模式</span><span class="platform-row-val warn">卖出手续费 0.4%（非点差）</span></div>
+        <div class="platform-row"><span class="platform-row-label">最低买入</span><span class="platform-row-val">1 克起（约 700 元）</span></div>
+        <div class="platform-row"><span class="platform-row-label">交易时段</span><span class="platform-row-val">工作日全天（含夜盘）</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">满 10 克可提（门槛最低）</span></div>
+        <div class="platform-row"><span class="platform-row-label">特色</span><span class="platform-row-val">买入价接近 AU9999 现货</span></div>
+      </div>
+      <div class="platform-footer">
+        <div class="platform-note">费率模式独特，金价高时 0.4% 卖出费比固定点差更贵，需计算</div>
+        <a class="platform-btn" href="https://mbank.czbank.com" target="_blank">打开↗</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ⑦ 价格预警 -->
   <div class="section-label">价格预警</div>
   <div class="alert-panel">
     <div class="alert-form">
@@ -1150,52 +1374,53 @@ async function fetchInternational() {
 // AU9999 = Shanghai Gold Exchange spot price, anchor for all bank deposit gold pricing
 // Trading hours: weekdays 09:00–15:30 and 20:00–02:30 (night session)
 // Outside trading hours Tencent returns last close; price won't change — this is normal
-// ─── 解析 AU9999 文本（腾讯格式）────────────────────────────────────
+// ─── 腾讯接口返回 GBK 编码，必须用 ArrayBuffer + TextDecoder 解码 ──
+// 直接 r.text() 用 UTF-8 解码会导致中文乱码，但 ~ 分隔符是 ASCII，
+// 价格字段是纯数字，实测解析仍能成功；为彻底稳定，显式用 GBK 解码。
+async function fetchGBK(url) {
+  const r = await fetch(url, { mode: 'cors' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const buf = await r.arrayBuffer();
+  try {
+    return new TextDecoder('gbk').decode(buf);
+  } catch(e) {
+    // 极少数浏览器不支持 gbk label，fallback 到 gb2312
+    return new TextDecoder('gb2312').decode(buf);
+  }
+}
+
+// ─── 解析 AU9999 文本（腾讯 ~分隔格式）────────────────────────────
 function parseTencentAU(text) {
   const m = text.match(/"([^"]+)"/);
   if (!m) return null;
   const p = m[1].split('~');
+  // [0]=市场类型 [1]=名称 [2]=代码 [3]=现价 [4]=涨跌额 [5]=涨跌幅%
   const price = parseFloat(p[3]);
   if (isNaN(price) || price <= 0) return null;
   return { price, change: parseFloat(p[4]) || 0, changeP: parseFloat(p[5]) || 0 };
 }
 
-// ─── 解析 AU9999 文本（新浪格式）────────────────────────────────────
-function parseSinaAU(text) {
-  const m = text.match(/"([^"]+)"/);
-  if (!m) return null;
-  const p = m[1].split(',');
-  const price = parseFloat(p[0]);
-  const prev  = parseFloat(p[2]) || price;
-  if (isNaN(price) || price <= 0) return null;
-  const change = price - prev;
-  return { price, change, changeP: prev ? change / prev * 100 : 0 };
-}
-
-// ─── Fetch Domestic — 腾讯主力 → 新浪备用 → 国际金价兜底 ─────────────
+// ─── Fetch Domestic — 腾讯（GBK正确解码）→ 国际金价兜底 ─────────────
+// 新浪已因 CORS 403 完全封死，移除以避免无效请求和错误日志
 async function fetchDomestic() {
   let parsed = null;
   let srcName = null;
 
-  // ① 腾讯（主力）
+  // ① 腾讯（主力，GBK 正确解码）
   try {
-    const r = await fetch(`https://qt.gtimg.cn/q=nh_Au9999&_=${Date.now()}`, { mode: 'cors' });
-    if (r.ok) { parsed = parseTencentAU(await r.text()); if (parsed) srcName = '腾讯证券 qt.gtimg.cn'; }
+    const text = await fetchGBK(`https://qt.gtimg.cn/q=nh_Au9999&_=${Date.now()}`);
+    parsed = parseTencentAU(text);
+    if (parsed) {
+      srcName = '腾讯证券 qt.gtimg.cn';
+      console.log('[AU9999] 腾讯接口成功，价格:', parsed.price);
+    }
   } catch(e) { console.warn('[AU9999] 腾讯失败:', e.message); }
 
-  // ② 新浪（备用）
-  if (!parsed) {
-    try {
-      const r = await fetch(`https://hq.sinajs.cn/list=nf_Au9999&_=${Date.now()}`, { mode: 'cors' });
-      if (r.ok) { parsed = parseSinaAU(await r.text()); if (parsed) srcName = '新浪财经 hq.sinajs.cn（备用）'; }
-    } catch(e) { console.warn('[AU9999] 新浪失败:', e.message); }
-  }
-
-  // ③ 国际金价换算（兜底）
+  // ② 国际金价换算（兜底，仅腾讯完全不可用时触发）
   if (!parsed && state.cny_gram) {
     parsed = { price: state.cny_gram, change: 0, changeP: 0 };
     srcName = 'gold-api.com 国际金价换算估算（兜底）';
-    console.warn('[AU9999] 两个接口均失败，使用国际金价估算');
+    console.warn('[AU9999] 腾讯接口失败，使用国际金价估算');
   }
 
   if (!parsed) { console.error('[AU9999] 所有来源失败'); return; }
@@ -1308,9 +1533,8 @@ async function fetchETFs() {
   const queryStr = etfList.map(e => e.prefix + e.code).join(',');
 
   try {
-    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`, { mode: 'cors' });
-    if (!res.ok) throw new Error('Tencent domestic ' + res.status);
-    const text = await res.text();
+    // 腾讯接口返回 GBK，需用 ArrayBuffer + TextDecoder 正确解码
+    const text = await fetchGBK(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`);
     const lines = text.trim().split('\n');
 
     lines.forEach((line, i) => {
