@@ -44,13 +44,56 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(13,13,13,0.92);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--gold-border);
+  background: var(--bg);
+  border-bottom: 1px solid rgba(201,168,76,0.15);
   padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: background 0.35s ease, backdrop-filter 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* 滚动后：更透明的毛玻璃态 */
+header.scrolled {
+  background: rgba(13,13,13,0.40);
+  backdrop-filter: blur(28px) saturate(1.4);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+
+/* ── 底部边线走光：短光点从中心向两端扩散 ── */
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  /* 基础线色 + 中心亮点叠加 */
+  background:
+    radial-gradient(ellipse 120px 1px at var(--shine-x, 50%) 50%,
+      var(--gold) 0%,
+      rgba(201,168,76,0.5) 40%,
+      transparent 100%
+    ),
+    linear-gradient(90deg, transparent, rgba(201,168,76,0.2) 20%, rgba(201,168,76,0.2) 80%, transparent);
+  animation: border-shine 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes border-shine {
+  0%   { --shine-x: -10%; opacity: 0;   }
+  8%   { opacity: 1;                    }
+  50%  { --shine-x: 50%;  opacity: 1;   }
+  92%  { opacity: 1;                    }
+  100% { --shine-x: 110%; opacity: 0;   }
+}
+
+/* 支持 CSS @property 的浏览器实现平滑插值（Chrome/Edge） */
+@property --shine-x {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: -10%;
 }
 
 .logo {
@@ -60,14 +103,18 @@ header {
 }
 
 .logo-icon {
-  width: 32px; height: 32px;
+  width: 32px;
+  height: 32px;
   background: var(--gold);
   border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 16px;
   font-family: 'Noto Serif SC', serif;
   color: #0D0D0D;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .logo-text {
@@ -95,24 +142,24 @@ header {
   color: var(--text2);
 }
 
+/* 刷新按钮：纯图标，正方形 */
 .refresh-btn {
   background: var(--gold-dim);
   border: 1px solid var(--gold-border);
   color: var(--gold);
-  padding: 7px 14px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-sm);
-  font-size: 12px;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-  white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
 }
 
 .refresh-btn:hover { background: rgba(201,168,76,0.25); border-color: var(--gold); }
-.refresh-btn:active { transform: scale(0.96); }
+.refresh-btn:active { transform: scale(0.93); }
 .refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -126,21 +173,61 @@ main {
 
 /* ─── Section Labels ─── */
 .section-label {
-  font-size: 10px;
-  letter-spacing: 3px;
+  font-size: 14px;
+  letter-spacing: 1.5px;
   color: var(--text3);
-  text-transform: uppercase;
   margin: 28px 0 12px;
   display: flex;
   align-items: center;
   gap: 10px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.section-label::after {
-  content: '';
+/* 线在文字之后、图标之前，flex:1 让它占满中间空间 */
+.section-label .section-line {
   flex: 1;
   height: 1px;
   background: var(--bg4);
+}
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  color: var(--text3);
+  border: 1px solid var(--bg4);
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.section-label:hover .section-toggle {
+  background: var(--bg4);
+  border-color: var(--text3);
+  color: var(--text2);
+}
+
+.section-toggle svg {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-label.collapsed .section-toggle svg {
+  transform: rotate(-90deg);
+}
+
+.section-body {
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  max-height: 9999px;
+  opacity: 1;
+}
+
+.section-body.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
 }
 
 /* ─── Price Card ─── */
@@ -757,14 +844,13 @@ main {
       <span id="update-time">--:--:--</span>
       最近更新
     </div>
-    <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()">
-      <svg class="refresh-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()" aria-label="刷新行情">
+      <svg class="refresh-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
         <path d="M21 3v5h-5"/>
         <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
         <path d="M8 16H3v5"/>
       </svg>
-      刷新
     </button>
   </div>
 </header>
@@ -773,7 +859,7 @@ main {
 <main>
 
   <!-- ① 国际金价 -->
-  <div class="section-label">国际金价</div>
+  <div class="section-label" onclick="toggleSection('sec-0')">国际金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-0">
   <div class="intl-grid">
     <div class="price-card" id="card-usd">
       <div class="card-label">现货金 · 美元</div>
@@ -829,7 +915,8 @@ main {
   </div>
 
   <!-- ② 国内金价 -->
-  <div class="section-label">国内金价</div>
+  </div>
+<div class="section-label" onclick="toggleSection('sec-1')">国内金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-1">
   <div class="price-card wide" id="card-au9999">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
       <div>
@@ -851,7 +938,8 @@ main {
   </div>
 
   <!-- ③ 银行积存金 -->
-  <div class="section-label">银行积存金 · 参考报价</div>
+  </div>
+<div class="section-label" onclick="toggleSection('sec-2')">银行积存金 · 参考报价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-2">
   <div class="bank-table">
     <div class="bank-row header">
       <span>银行 · 产品</span><span>参考买入</span><span>点差/手续费</span><span>官方渠道</span>
@@ -908,7 +996,7 @@ main {
       <div class="bank-name">浙商银行<br><span style="font-size:9px;color:var(--text3)">财富金积存</span></div>
       <div class="bank-buy" id="bank-czb-price">--</div>
       <div class="bank-diff">卖出手续费0.4%</div>
-      <div class="bank-link"><a href="https://mbank.czbank.com" target="_blank">前往↗</a></div>
+      <div class="bank-link"><a href="https://www.czbank.com/cn/personal/ebank/fwjs/web1_4405/" target="_blank">前往↗</a></div>
     </div>
     <div class="bank-row">
       <div class="bank-name">光大银行<br><span style="font-size:9px;color:var(--text3)">黄金积存</span></div>
@@ -942,7 +1030,8 @@ main {
   </div>
 
   <!-- ④ 黄金 ETF -->
-  <div class="section-label">黄金 ETF</div>
+  </div>
+<div class="section-label" onclick="toggleSection('sec-3')">黄金 ETF<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-3">
   <div class="etf-grid">
     <div class="etf-card" id="etf-518880">
       <div class="etf-name">华安黄金 ETF</div>
@@ -983,7 +1072,8 @@ main {
   </div>
 
   <!-- ⑤ 零售金饰 -->
-  <div class="section-label">零售金饰 · 参考估价</div>
+  </div>
+<div class="section-label" onclick="toggleSection('sec-4')">零售金饰 · 参考估价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-4">
   <div class="jewelry-grid">
     <div class="jewelry-card">
       <div class="jewelry-brand">周大福 / 老庙 / 六福</div>
@@ -1014,7 +1104,8 @@ main {
   </div>
 
   <!-- ⑥ 平台终端报价入口 -->
-  <div class="section-label">平台终端报价 · 快速入口</div>
+  </div>
+<div class="section-label" onclick="toggleSection('sec-5')">平台终端报价 · 快速入口<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-5">
 
   <div class="platform-no-api" style="margin-bottom:10px;">
     ℹ️ 以下各平台均无公开接口，实时报价需在对应 App 内查看。此处提供底层资产、费率、规则等关键信息对比，帮助你快速判断后直达目标平台。
@@ -1034,11 +1125,11 @@ main {
         <div class="platform-row"><span class="platform-row-label">卖出费率</span><span class="platform-row-val warn">0.2%</span></div>
         <div class="platform-row"><span class="platform-row-label">最低买入</span><span class="platform-row-val">1 元起</span></div>
         <div class="platform-row"><span class="platform-row-label">交易时段</span><span class="platform-row-val">工作日 09:30–15:00</span></div>
-        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">不支持</span></div>
+        <div class="platform-row"><span class="platform-row-label">提实物</span><span class="platform-row-val">满 3 克可提（需付工本费+快递费）</span></div>
       </div>
       <div class="platform-footer">
         <div class="platform-note">价格 = ETF 实时价，与 AU9999 现货略有偏差（ETF 有溢折价）</div>
-        <a class="platform-btn" href="alipays://platformapi/startapp?appId=68687143" target="_blank">打开↗</a>
+        <a class="platform-btn" href="https://zanjin.alipay.com" target="_blank">打开↗</a>
       </div>
     </div>
 
@@ -1057,7 +1148,7 @@ main {
       </div>
       <div class="platform-footer">
         <div class="platform-note">招行价差在各行中偏高；微信入口便捷但费用略贵</div>
-        <a class="platform-btn" href="https://we.qq.com/p/wx4b0e60028b40f3b6" target="_blank">打开↗</a>
+        <a class="platform-btn" href="https://financial.weixin.qq.com" target="_blank">打开↗</a>
       </div>
     </div>
 
@@ -1077,7 +1168,7 @@ main {
       </div>
       <div class="platform-footer">
         <div class="platform-note">费率与支付宝相近，ETF 型价格更贴近国际金价</div>
-        <a class="platform-btn" href="https://m.jd.com/product/gold.html" target="_blank">打开↗</a>
+        <a class="platform-btn" href="https://jdjr.jd.com" target="_blank">打开↗</a>
       </div>
     </div>
 
@@ -1097,7 +1188,7 @@ main {
       </div>
       <div class="platform-footer">
         <div class="platform-note">非实时价格，按次日净值成交；适合长期定投，不适合短线</div>
-        <a class="platform-btn" href="https://m.1234567.com.cn" target="_blank">打开↗</a>
+        <a class="platform-btn" href="https://www.1234567.com.cn" target="_blank">打开↗</a>
       </div>
     </div>
 
@@ -1135,14 +1226,15 @@ main {
       </div>
       <div class="platform-footer">
         <div class="platform-note">费率模式独特，金价高时 0.4% 卖出费比固定点差更贵，需计算</div>
-        <a class="platform-btn" href="https://mbank.czbank.com" target="_blank">打开↗</a>
+        <a class="platform-btn" href="https://www.czbank.com/cn/personal/ebank/fwjs/web1_4405/" target="_blank">打开↗</a>
       </div>
     </div>
 
   </div>
 
   <!-- ⑦ 价格预警 -->
-  <div class="section-label">价格预警</div>
+  </div>
+<div class="section-label" onclick="toggleSection('sec-6')">价格预警<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-6">
   <div class="alert-panel">
     <div class="alert-form">
       <select class="alert-select" id="alert-type">
@@ -1163,6 +1255,7 @@ main {
     </div>
   </div>
 
+</div>
   <!-- Status -->
   <div class="status-bar">
     <span class="dot"></span>
@@ -1208,6 +1301,30 @@ let alerts = JSON.parse(localStorage.getItem('goldAlerts') || '[]');
 let refreshTimer = null;
 let originalTitle = document.title;
 let titleTickerTimer = null;
+
+// ─── Section collapse/expand ──────────────────────────────────────────
+function toggleSection(id) {
+  const body  = document.getElementById(id);
+  const label = body ? body.previousElementSibling : null;
+  if (!body || !label) return;
+  const collapsed = body.classList.toggle('collapsed');
+  label.classList.toggle('collapsed', collapsed);
+  // persist state in sessionStorage
+  try { sessionStorage.setItem('sec_' + id, collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function restoreSectionStates() {
+  document.querySelectorAll('.section-body').forEach(body => {
+    try {
+      const stored = sessionStorage.getItem('sec_' + body.id);
+      if (stored === '1') {
+        body.classList.add('collapsed');
+        const label = body.previousElementSibling;
+        if (label) label.classList.add('collapsed');
+      }
+    } catch(e) {}
+  });
+}
 
 // ─── Tab visibility ticker ─────────────────────────────
 document.addEventListener('visibilitychange', () => {
@@ -1749,8 +1866,18 @@ function startAutoRefresh() {
 window.addEventListener('DOMContentLoaded', () => {
   initChart();
   renderAlerts();
+  restoreSectionStates();
   refreshAll();
   startAutoRefresh();
+
+  /* ── 滚动距离 > 60px 时给 header 加 .scrolled 毛玻璃态 ── */
+  const headerEl = document.querySelector('header');
+  const SCROLL_THRESHOLD = 60;
+  function onScroll() {
+    headerEl.classList.toggle('scrolled', window.scrollY > SCROLL_THRESHOLD);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll(); /* 初始化一次，防止刷新时页面已滚动 */
 });
 </script>
 </body>
