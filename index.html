@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>黄金行情监视器</title>
+<title>黄金行情</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -734,30 +734,23 @@ main {
 
   <!-- ② 国内金价 -->
   <div class="section-label">国内金价</div>
-  <div class="price-grid">
-    <div class="price-card" id="card-au9999">
-      <div class="card-label">AU9999 · 上海金</div>
-      <div class="card-price loading" id="price-au9999">加载中…</div>
-      <div class="card-change neutral" id="change-au9999">--</div>
-      <div class="card-sub">元/克</div>
+  <div class="price-card wide" id="card-au9999">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div class="card-label" style="margin-bottom:2px;">AU9999 · 上海黄金交易所现货</div>
+        <div style="font-size:10px;color:var(--text3);">银行积存金定价锚 · 元/克</div>
+      </div>
+      <div id="au9999-status-badge" style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--bg4);color:var(--text3);border:1px solid var(--bg4);">获取中…</div>
     </div>
-    <div class="price-card" id="card-au9995">
-      <div class="card-label">AU9995 · 标准金</div>
-      <div class="card-price loading" id="price-au9995">加载中…</div>
-      <div class="card-change neutral" id="change-au9995">--</div>
-      <div class="card-sub">元/克</div>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
+      <div class="card-price loading" id="price-au9999" style="font-size:32px;">加载中…</div>
+      <div class="card-change neutral" id="change-au9999" style="font-size:13px;">--</div>
     </div>
-    <div class="price-card" id="card-autn">
-      <div class="card-label">Au(T+N) · 延期交割</div>
-      <div class="card-price loading" id="price-autn">加载中…</div>
-      <div class="card-change neutral" id="change-autn">--</div>
-      <div class="card-sub">元/克</div>
-    </div>
-    <div class="price-card" id="card-shau">
-      <div class="card-label">SHAU · 上海金基准</div>
-      <div class="card-price loading" id="price-shau">加载中…</div>
-      <div class="card-change neutral" id="change-shau">--</div>
-      <div class="card-sub">元/克</div>
+    <div id="au9999-note" style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.6;"></div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bg3);font-size:10px;color:var(--text3);line-height:1.7;">
+      数据来源：<span id="au9999-src-label" style="background:var(--bg4);padding:2px 6px;border-radius:4px;">获取中…</span> 实时行情<br>
+      交易时段：工作日 09:00–15:30 · 20:00–次日 02:30（夜盘）<br>
+      非交易时段显示最近收盘价，价格不变动属正常现象。
     </div>
   </div>
 
@@ -840,7 +833,7 @@ main {
       </div>
       <div style="margin-top:6px;font-size:10px;color:var(--text3);line-height:1.7;">
         数据来源：AU9999 现货价取自
-        <span class="bank-source-badge">腾讯证券 qt.gtimg.cn</span>
+        <span id="bank-formula-src" class="bank-source-badge">获取中…</span>
         实时行情，点差参考各行公告披露数据。<br>
         点差会随金价波动<strong style="color:var(--text2)">动态调整</strong>，以下为近期固定手续费参考值，非实时买卖价差。<br>
         <strong style="color:var(--gold)">⚠ 实际成交价以各行 App 当时报价为准，本页仅供参考。</strong>
@@ -951,6 +944,9 @@ main {
     <span class="dot"></span>
     <span id="status-text">自动刷新每 60 秒 · 网页开启时有效</span>
   </div>
+  <div id="data-source-bar" style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px;line-height:1.8;letter-spacing:0.3px;">
+    数据来源获取中…
+  </div>
 
 </main>
 
@@ -982,6 +978,7 @@ let state = {
   cny_gram: null,
   chartMode: 'usd',
   chartHistory: { usd: [], cny_gram: [] },
+  sources: { international: null, domestic: null, etf: null },
 };
 let alerts = JSON.parse(localStorage.getItem('goldAlerts') || '[]');
 let refreshTimer = null;
@@ -1136,6 +1133,8 @@ async function fetchInternational() {
     document.getElementById('jewelry-price').textContent  = (g24 * 1.01 + 95).toFixed(0);
     document.getElementById('jewelry-price2').textContent = (g24 * 1.01 + 65).toFixed(0);
 
+    state.sources.international = 'gold-api.com + open.er-api.com（免费，无限次）';
+    updateSourceBar();
     // Safety net: if domestic fetch hasn't run yet, populate bank prices from cny_gram
     if (state.cny_gram && (!state.au9999)) {
       updateBankPrices(state.cny_gram);
@@ -1147,46 +1146,110 @@ async function fetchInternational() {
   }
 }
 
-// ─── Fetch Domestic gold — Tencent API ───────────────
+// ─── Fetch Domestic gold (AU9999 only) — Tencent API ──
+// AU9999 = Shanghai Gold Exchange spot price, anchor for all bank deposit gold pricing
+// Trading hours: weekdays 09:00–15:30 and 20:00–02:30 (night session)
+// Outside trading hours Tencent returns last close; price won't change — this is normal
+// ─── 解析 AU9999 文本（腾讯格式）────────────────────────────────────
+function parseTencentAU(text) {
+  const m = text.match(/"([^"]+)"/);
+  if (!m) return null;
+  const p = m[1].split('~');
+  const price = parseFloat(p[3]);
+  if (isNaN(price) || price <= 0) return null;
+  return { price, change: parseFloat(p[4]) || 0, changeP: parseFloat(p[5]) || 0 };
+}
+
+// ─── 解析 AU9999 文本（新浪格式）────────────────────────────────────
+function parseSinaAU(text) {
+  const m = text.match(/"([^"]+)"/);
+  if (!m) return null;
+  const p = m[1].split(',');
+  const price = parseFloat(p[0]);
+  const prev  = parseFloat(p[2]) || price;
+  if (isNaN(price) || price <= 0) return null;
+  const change = price - prev;
+  return { price, change, changeP: prev ? change / prev * 100 : 0 };
+}
+
+// ─── Fetch Domestic — 腾讯主力 → 新浪备用 → 国际金价兜底 ─────────────
 async function fetchDomestic() {
-  const items = [
-    { id: 'nh_Au9999',   key: 'au9999' },
-    { id: 'nh_Au9995',   key: 'au9995' },
-    { id: 'nh_Au(T+N1)', key: 'autn'   },
-    { id: 'nh_SHAU',     key: 'shau'   },
-  ];
-  const queryStr = items.map(x => x.id).join(',');
+  let parsed = null;
+  let srcName = null;
 
+  // ① 腾讯（主力）
   try {
-    const res = await fetch(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`, { mode: 'cors' });
-    if (!res.ok) throw new Error('Tencent domestic ' + res.status);
-    const text = await res.text();
-    const lines = text.trim().split('\n');
+    const r = await fetch(`https://qt.gtimg.cn/q=nh_Au9999&_=${Date.now()}`, { mode: 'cors' });
+    if (r.ok) { parsed = parseTencentAU(await r.text()); if (parsed) srcName = '腾讯证券 qt.gtimg.cn'; }
+  } catch(e) { console.warn('[AU9999] 腾讯失败:', e.message); }
 
-    lines.forEach((line, i) => {
-      const match = line.match(/"([^"]+)"/);
-      if (!match || !items[i]) return;
-      const parts = match[1].split('~');
-      const price = parseFloat(parts[3]);
-      const change = parseFloat(parts[4]);
-      const changeP = parseFloat(parts[5]);
-      if (isNaN(price) || price <= 0) return;
-      if (items[i].key === 'au9999') state.au9999 = price;
-      setCard(items[i].key, price, change || 0, changeP || 0);
-      if (items[i].key === 'au9999') updateBankPrices(price);
-    });
-  } catch(e) {
-    console.warn('Domestic fetch failed, using CNY gram fallback:', e);
-    if (state.cny_gram) {
-      const approx = state.cny_gram;
-      setCard('au9999', approx, 0, 0);
-      setCard('au9995', approx * 0.9995, 0, 0);
-      setCard('autn',   approx * 1.001,  0, 0);
-      setCard('shau',   approx,          0, 0);
-      state.au9999 = approx;
-      updateBankPrices(approx);
-    }
+  // ② 新浪（备用）
+  if (!parsed) {
+    try {
+      const r = await fetch(`https://hq.sinajs.cn/list=nf_Au9999&_=${Date.now()}`, { mode: 'cors' });
+      if (r.ok) { parsed = parseSinaAU(await r.text()); if (parsed) srcName = '新浪财经 hq.sinajs.cn（备用）'; }
+    } catch(e) { console.warn('[AU9999] 新浪失败:', e.message); }
   }
+
+  // ③ 国际金价换算（兜底）
+  if (!parsed && state.cny_gram) {
+    parsed = { price: state.cny_gram, change: 0, changeP: 0 };
+    srcName = 'gold-api.com 国际金价换算估算（兜底）';
+    console.warn('[AU9999] 两个接口均失败，使用国际金价估算');
+  }
+
+  if (!parsed) { console.error('[AU9999] 所有来源失败'); return; }
+
+  const { price, change, changeP } = parsed;
+  const isEstimate = srcName && srcName.includes('估算');
+
+  state.au9999 = price;
+  state.sources.domestic = srcName;
+  setCard('au9999', price, change, changeP);
+  updateBankPrices(price);
+  updateSourceBar();
+
+  // ── 交易状态徽章 ──────────────────────────────────────────────────
+  const badge = document.getElementById('au9999-status-badge');
+  const note  = document.getElementById('au9999-note');
+
+  if (isEstimate) {
+    if (badge) { badge.textContent = '≈ 估算价'; badge.style.cssText = 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid var(--gold-border);'; }
+    if (note)  note.textContent = '⚠ 上海金实时数据暂无法获取，当前为国际金价按实时汇率换算估算值，仅供参考。';
+  } else {
+    const now = new Date();
+    const day = now.getDay(), tot = now.getHours() * 60 + now.getMinutes();
+    const inTrading = (day > 0 && day < 6) && (
+      (tot >= 9*60 && tot <= 15*60+30) || tot >= 20*60 || tot <= 2*60+30
+    );
+    if (badge) {
+      badge.textContent = inTrading ? '● 交易中' : '○ 休市';
+      badge.style.cssText = inTrading
+        ? 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(76,175,122,0.12);color:var(--up);border:1px solid rgba(76,175,122,0.3);'
+        : 'font-size:10px;padding:3px 10px;border-radius:20px;background:var(--bg4);color:var(--text3);border:1px solid var(--bg4);';
+    }
+    if (note) note.textContent = inTrading ? '' : `⚠ 当前为非交易时段，显示最近收盘价 ${price.toFixed(2)} 元/克，价格暂不变动，下一交易时段开市后恢复实时更新。`;
+  }
+}
+
+// ─── 底部数据来源提示栏 ──────────────────────────────────────────────
+function updateSourceBar() {
+  const el = document.getElementById('data-source-bar');
+  if (!el) return;
+  const s = state.sources;
+  const parts = [];
+  if (s.international) parts.push('国际金价：' + s.international);
+  if (s.domestic)      parts.push('国内金价：' + s.domestic);
+  if (s.etf)           parts.push('ETF 行情：' + s.etf);
+  el.textContent = parts.length
+    ? '目前数据获取来源为　' + parts.join('　·　')
+    : '数据来源获取中…';
+  // 同步页面内联标签
+  const a = document.getElementById('au9999-src-label');
+  const b = document.getElementById('bank-formula-src');
+  const d = s.domestic || '获取中…';
+  if (a) a.textContent = d;
+  if (b) b.textContent = d;
 }
 
 function updateBankPrices(base) {
@@ -1260,8 +1323,12 @@ async function fetchETFs() {
       if (isNaN(price) || price === 0) return;
       setETF(etfList[i].code, price, change || 0, changeP || 0);
     });
+    state.sources.etf = '腾讯证券 qt.gtimg.cn';
+    updateSourceBar();
   } catch(e) {
     console.warn('ETF fetch error:', e);
+    state.sources.etf = '获取失败';
+    updateSourceBar();
   }
 }
 
