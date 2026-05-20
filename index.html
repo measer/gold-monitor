@@ -46,7 +46,7 @@ header {
   z-index: 100;
   background: var(--bg);
   border-bottom: 1px solid rgba(201,168,76,0.15);
-  padding: 12px 20px;
+  padding: 8px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -61,7 +61,7 @@ header.scrolled {
   box-shadow: 0 4px 24px rgba(0,0,0,0.35);
 }
 
-/* ── 底部边线走光：短光点从中心向两端扩散 ── */
+/* ── 底部边线基础线 ── */
 header::after {
   content: '';
   position: absolute;
@@ -69,31 +69,38 @@ header::after {
   left: 0;
   right: 0;
   height: 1px;
-  /* 基础线色 + 中心亮点叠加 */
-  background:
-    radial-gradient(ellipse 120px 1px at var(--shine-x, 50%) 50%,
-      var(--gold) 0%,
-      rgba(201,168,76,0.5) 40%,
-      transparent 100%
-    ),
-    linear-gradient(90deg, transparent, rgba(201,168,76,0.2) 20%, rgba(201,168,76,0.2) 80%, transparent);
-  animation: border-shine 3.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(201,168,76,0.15) 20%,
+    rgba(201,168,76,0.15) 80%,
+    transparent
+  );
   pointer-events: none;
 }
 
-@keyframes border-shine {
-  0%   { --shine-x: -10%; opacity: 0;   }
-  8%   { opacity: 1;                    }
-  50%  { --shine-x: 50%;  opacity: 1;   }
-  92%  { opacity: 1;                    }
-  100% { --shine-x: 110%; opacity: 0;   }
+/* ── 流星光点：从左到右扫过底边线 ── */
+.header-meteor {
+  position: absolute;
+  bottom: -0.5px;
+  left: -180px;
+  width: 180px;
+  height: 0.5px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(201,168,76,0.1) 30%,
+    rgba(232,201,106,0.6) 80%,
+    var(--gold)
+  );
+  box-shadow: 0 0 4px rgba(201,168,76,0.25), 0 0 8px rgba(201,168,76,0.1);
+  animation: meteor 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
 }
 
-/* 支持 CSS @property 的浏览器实现平滑插值（Chrome/Edge） */
-@property --shine-x {
-  syntax: '<percentage>';
-  inherits: false;
-  initial-value: -10%;
+@keyframes meteor {
+  0%   { left: -180px; }
+  100% { left: calc(100% + 180px); }
 }
 
 .logo {
@@ -102,15 +109,65 @@ header::after {
   gap: 10px;
 }
 
+/* ── 语言切换 ── */
+.lang-switch {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  border-radius: 5px;
+  padding: 1px;
+  flex-shrink: 0;
+}
+
+.lang-btn {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.lang-btn.active {
+  background: var(--gold-dim);
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+}
+
+.lang-btn:not(.active):hover {
+  color: var(--text2);
+  background: var(--bg4);
+}
+
+/* ── 语言切换入场动画 ── */
+@keyframes lang-fade-in {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.lang-transition [data-i18n],
+.lang-transition .section-label,
+.lang-transition .card-label,
+.lang-transition .card-sub {
+  animation: lang-fade-in 0.25s ease forwards;
+}
+
 .logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   background: var(--gold);
-  border-radius: 8px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   font-family: 'Noto Serif SC', serif;
   color: #0D0D0D;
   font-weight: 700;
@@ -119,7 +176,7 @@ header::after {
 
 .logo-text {
   font-family: 'Noto Serif SC', serif;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--gold-light);
   letter-spacing: 2px;
 }
@@ -127,39 +184,53 @@ header::after {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
+
+/* 语言 + 时间 竖排容器 */
+.header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
 }
 
 .last-update {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text3);
-  text-align: right;
-  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .last-update span {
-  display: block;
   color: var(--text2);
+  font-variant-numeric: tabular-nums;
 }
 
-/* 刷新按钮：纯图标，正方形 */
+/* 刷新按钮：行内小图标，贴合时间行高 */
 .refresh-btn {
-  background: var(--gold-dim);
-  border: 1px solid var(--gold-border);
-  color: var(--gold);
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text3);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+  padding: 0;
+  margin-left: 4px;
+  transition: background 0.2s, color 0.15s, transform 0.1s;
+  vertical-align: middle;
 }
 
-.refresh-btn:hover { background: rgba(201,168,76,0.25); border-color: var(--gold); }
-.refresh-btn:active { transform: scale(0.93); }
+.refresh-btn:hover { background: var(--bg4); color: var(--gold); }
+.refresh-btn:active { transform: scale(0.90); }
 .refresh-btn.spinning .refresh-icon { animation: spin 0.8s linear infinite; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -835,23 +906,32 @@ main {
 
 <!-- Header -->
 <header>
+  <!-- 流星光点元素 -->
+  <div class="header-meteor"></div>
+
   <div class="logo">
     <div class="logo-icon">金</div>
-    <div class="logo-text">黄金行情</div>
+    <div class="logo-text" data-i18n="title">黄金行情</div>
   </div>
   <div class="header-right">
-    <div class="last-update">
-      <span id="update-time">--:--:--</span>
-      最近更新
+    <div class="header-meta">
+      <div class="lang-switch" role="group" aria-label="语言切换">
+        <button class="lang-btn active" id="lang-zh" onclick="setLang('zh')" aria-pressed="true">中文</button>
+        <button class="lang-btn" id="lang-en" onclick="setLang('en')" aria-pressed="false">EN</button>
+      </div>
+      <div class="last-update">
+        <span data-i18n="lastUpdate">最近更新</span>
+        <span id="update-time">--:--:--</span>
+        <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()" aria-label="刷新行情">
+          <svg class="refresh-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M8 16H3v5"/>
+          </svg>
+        </button>
+      </div>
     </div>
-    <button class="refresh-btn" id="refresh-btn" onclick="refreshAll()" aria-label="刷新行情">
-      <svg class="refresh-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-        <path d="M21 3v5h-5"/>
-        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-        <path d="M8 16H3v5"/>
-      </svg>
-    </button>
   </div>
 </header>
 
@@ -859,7 +939,7 @@ main {
 <main>
 
   <!-- ① 国际金价 -->
-  <div class="section-label" onclick="toggleSection('sec-0')">国际金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-0">
+  <div class="section-label" onclick="toggleSection('sec-0')" data-sec="sec-intl">国际金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-0">
   <div class="intl-grid">
     <div class="price-card" id="card-usd">
       <div class="card-label">现货金 · 美元</div>
@@ -916,12 +996,12 @@ main {
 
   <!-- ② 国内金价 -->
   </div>
-<div class="section-label" onclick="toggleSection('sec-1')">国内金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-1">
+<div class="section-label" onclick="toggleSection('sec-1')" data-sec="sec-dom">国内金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-1">
   <div class="price-card wide" id="card-au9999">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
       <div>
         <div class="card-label" style="margin-bottom:2px;">AU9999 · 上海黄金交易所现货</div>
-        <div style="font-size:10px;color:var(--text3);">银行积存金定价锚 · 元/克</div>
+        <div style="font-size:10px;color:var(--text3);" data-i18n="lbl-au-anchor">银行积存金定价锚 · 元/克</div>
       </div>
       <div id="au9999-status-badge" style="font-size:10px;padding:3px 10px;border-radius:20px;background:var(--bg4);color:var(--text3);border:1px solid var(--bg4);">获取中…</div>
     </div>
@@ -939,7 +1019,7 @@ main {
 
   <!-- ③ 银行积存金 -->
   </div>
-<div class="section-label" onclick="toggleSection('sec-2')">银行积存金 · 参考报价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-2">
+<div class="section-label" onclick="toggleSection('sec-2')" data-sec="sec-bank">银行积存金 · 参考报价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-2">
   <div class="bank-table">
     <div class="bank-row header">
       <span>银行 · 产品</span><span>参考买入</span><span>点差/手续费</span><span>官方渠道</span>
@@ -1031,7 +1111,7 @@ main {
 
   <!-- ④ 黄金 ETF -->
   </div>
-<div class="section-label" onclick="toggleSection('sec-3')">黄金 ETF<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-3">
+<div class="section-label" onclick="toggleSection('sec-3')" data-sec="sec-etf">黄金 ETF<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-3">
   <div class="etf-grid">
     <div class="etf-card" id="etf-518880">
       <div class="etf-name">华安黄金 ETF</div>
@@ -1073,7 +1153,7 @@ main {
 
   <!-- ⑤ 零售金饰 -->
   </div>
-<div class="section-label" onclick="toggleSection('sec-4')">零售金饰 · 参考估价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-4">
+<div class="section-label" onclick="toggleSection('sec-4')" data-sec="sec-jew">零售金饰 · 参考估价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-4">
   <div class="jewelry-grid">
     <div class="jewelry-card">
       <div class="jewelry-brand">周大福 / 老庙 / 六福</div>
@@ -1105,7 +1185,7 @@ main {
 
   <!-- ⑥ 平台终端报价入口 -->
   </div>
-<div class="section-label" onclick="toggleSection('sec-5')">平台终端报价 · 快速入口<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-5">
+<div class="section-label" onclick="toggleSection('sec-5')" data-sec="sec-plat">平台终端报价 · 快速入口<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-5">
 
   <div class="platform-no-api" style="margin-bottom:10px;">
     ℹ️ 以下各平台均无公开接口，实时报价需在对应 App 内查看。此处提供底层资产、费率、规则等关键信息对比，帮助你快速判断后直达目标平台。
@@ -1234,7 +1314,7 @@ main {
 
   <!-- ⑦ 价格预警 -->
   </div>
-<div class="section-label" onclick="toggleSection('sec-6')">价格预警<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-6">
+<div class="section-label" onclick="toggleSection('sec-6')" data-sec="sec-alert">价格预警<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-6">
   <div class="alert-panel">
     <div class="alert-form">
       <select class="alert-select" id="alert-type">
@@ -1301,6 +1381,174 @@ let alerts = JSON.parse(localStorage.getItem('goldAlerts') || '[]');
 let refreshTimer = null;
 let originalTitle = document.title;
 let titleTickerTimer = null;
+
+// ─── i18n 多语言 ──────────────────────────────────────────────────────
+const I18N = {
+  zh: {
+    title:        '黄金行情',
+    lastUpdate:   '最近更新',
+    refreshLabel: '刷新行情',
+    loading:      '加载中…',
+    'sec-intl':   '国际金价',
+    'sec-dom':    '国内金价',
+    'sec-bank':   '银行积存金 · 参考报价',
+    'sec-etf':    '黄金 ETF',
+    'sec-jew':    '零售金饰 · 参考估价',
+    'sec-plat':   '平台终端报价 · 快速入口',
+    'sec-alert':  '价格预警',
+    'lbl-usd':    '现货金 · 美元',
+    'lbl-cny':    '现货金 · 人民币',
+    'lbl-gram':   '每克单价参考（人民币）',
+    'lbl-24k':    '24K 纯金',
+    'lbl-22k':    '22K 金',
+    'lbl-18k':    '18K 金',
+    'lbl-high':   '今日最高',
+    'lbl-low':    '今日最低',
+    'lbl-trend':  '价格走势',
+    'lbl-au-anchor': '银行积存金定价锚 · 元/克',
+    'lbl-datasrc':   '最近更新',
+    'sub-oz':     '每金衡盎司',
+    'alert-empty':'暂无预警，添加后将在价格到达时弹窗并响铃',
+    'alert-add':  '+ 添加',
+    'alert-below':'跌破',
+    'alert-above':'涨过',
+    'platform-no-api': 'ℹ️ 以下各平台均无公开接口，实时报价需在对应 App 内查看。此处提供底层资产、费率、规则等关键信息对比，帮助你快速判断后直达目标平台。',
+    'status-auto': '自动刷新每 60 秒 · 网页开启时有效',
+    'goto': '前往↗',
+    'open': '打开↗',
+  },
+  en: {
+    title:        'Gold Monitor',
+    lastUpdate:   'Last Update',
+    refreshLabel: 'Refresh',
+    loading:      'Loading…',
+    'sec-intl':   'International Gold',
+    'sec-dom':    'Shanghai Gold',
+    'sec-bank':   'Bank Gold Savings · Reference',
+    'sec-etf':    'Gold ETFs',
+    'sec-jew':    'Retail Gold · Estimate',
+    'sec-plat':   'Platform Prices · Quick Links',
+    'sec-alert':  'Price Alerts',
+    'lbl-usd':    'Spot Gold · USD',
+    'lbl-cny':    'Spot Gold · CNY',
+    'lbl-gram':   'Per-gram Reference (CNY)',
+    'lbl-24k':    '24K Pure',
+    'lbl-22k':    '22K Gold',
+    'lbl-18k':    '18K Gold',
+    'lbl-high':   "Today's High",
+    'lbl-low':    "Today's Low",
+    'lbl-trend':  'Price Trend',
+    'lbl-au-anchor': 'Anchor for bank gold savings · CNY/g',
+    'lbl-datasrc':   'Last Update',
+    'sub-oz':     'per troy oz',
+    'alert-empty':'No alerts. Add one to get notified when price is reached.',
+    'alert-add':  '+ Add',
+    'alert-below':'drops below',
+    'alert-above':'rises above',
+    'platform-no-api': 'ℹ️ None of the platforms below offer public APIs. Visit their apps for live prices. This section provides fee comparisons and direct links.',
+    'status-auto': 'Auto-refresh every 60s · Active while page is open',
+    'goto': 'Visit↗',
+    'open': 'Open↗',
+  }
+};
+
+let currentLang = localStorage.getItem('goldLang') || 'zh';
+
+function setLang(lang) {
+  if (lang === currentLang) return;
+  currentLang = lang;
+  localStorage.setItem('goldLang', lang);
+
+  /* 切换按钮状态 */
+  document.getElementById('lang-zh').classList.toggle('active', lang === 'zh');
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('lang-zh').setAttribute('aria-pressed', lang === 'zh');
+  document.getElementById('lang-en').setAttribute('aria-pressed', lang === 'en');
+
+  /* 入场动画：给 main 加 class，动画结束后移除 */
+  const mainEl = document.querySelector('main');
+  mainEl.classList.remove('lang-transition');
+  void mainEl.offsetWidth; /* reflow 触发重新播放 */
+  mainEl.classList.add('lang-transition');
+  setTimeout(() => mainEl.classList.remove('lang-transition'), 350);
+
+  applyLang();
+}
+
+function applyLang() {
+  const t = I18N[currentLang];
+
+  /* data-i18n 属性的通用元素 */
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+
+  /* 页面标题 */
+  document.title = t.title + (currentLang === 'zh' ? ' · 黄金行情监视器' : ' · Gold Price Monitor');
+
+  /* 刷新按钮 aria-label */
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) refreshBtn.setAttribute('aria-label', t.refreshLabel);
+
+  /* section-label 文字（通过 data-sec 属性匹配） */
+  document.querySelectorAll('.section-label[data-sec]').forEach(el => {
+    const key = el.getAttribute('data-sec');
+    if (t[key]) {
+      /* 只更新文本节点，不破坏 section-line 和 toggle */
+      el.childNodes[0].textContent = t[key];
+    }
+  });
+
+  /* 卡片标签 */
+  const map = {
+    'lbl-usd':   '.price-card#card-usd .card-label',
+    'lbl-cny':   '.price-card#card-cny .card-label',
+    'lbl-gram':  '#card-gram .card-label',
+    'lbl-trend': '.chart-title',
+    'sub-oz':    '#sub-usd, #sub-cny',
+  };
+  Object.entries(map).forEach(([key, sel]) => {
+    document.querySelectorAll(sel).forEach(el => {
+      if (t[key]) el.textContent = t[key];
+    });
+  });
+
+  /* 每克小标签 */
+  [['lbl-24k','24K 纯金','24K Pure'],
+   ['lbl-22k','22K 金','22K Gold'],
+   ['lbl-18k','18K 金','18K Gold'],
+   ['lbl-high','今日最高',"Today's High"],
+   ['lbl-low', '今日最低',"Today's Low"]
+  ].forEach(([key, zhText]) => {
+    document.querySelectorAll('#card-gram [style*="font-size:10px"]').forEach(el => {
+      if (el.textContent === (currentLang === 'zh' ? t[key] : I18N.zh[key]) ||
+          el.textContent === t[key]) {
+        el.textContent = t[key];
+      }
+    });
+  });
+
+  /* AU9999 anchor label */
+  const anchorEl = document.querySelector('#card-au9999 [data-i18n="lbl-au-anchor"]');
+  if (anchorEl) anchorEl.textContent = t['lbl-au-anchor'];
+
+  /* 价格预警空状态文字 */
+  const alertEmpty = document.querySelector('.alert-empty');
+  if (alertEmpty) alertEmpty.textContent = t['alert-empty'];
+
+  /* 添加按钮 */
+  const addBtn = document.querySelector('.add-alert-btn');
+  if (addBtn) addBtn.textContent = t['alert-add'];
+
+  /* platform no-api 说明 */
+  const noApi = document.querySelector('.platform-no-api');
+  if (noApi) noApi.textContent = t['platform-no-api'];
+
+  /* status bar */
+  const statusEl = document.getElementById('status-text');
+  if (statusEl) statusEl.textContent = t['status-auto'];
+}
 
 // ─── Section collapse/expand ──────────────────────────────────────────
 function toggleSection(id) {
@@ -1878,6 +2126,13 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll(); /* 初始化一次，防止刷新时页面已滚动 */
+
+  /* 初始化语言 */
+  if (currentLang === 'en') {
+    document.getElementById('lang-zh').classList.remove('active');
+    document.getElementById('lang-en').classList.add('active');
+    applyLang();
+  }
 });
 </script>
 </body>
