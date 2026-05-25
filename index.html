@@ -690,6 +690,121 @@ main {
   .platform-grid { grid-template-columns: 1fr; }
 }
 
+/* ─── Position Calculator ─── */
+.position-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.position-input-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.position-input-card label {
+  display: block;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.position-input-card input,
+.position-input-card select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.position-input-card input:focus,
+.position-input-card select:focus { border-color: var(--gold-border); }
+
+.position-input-card select option { background: var(--bg3); }
+
+.position-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.position-stat {
+  flex: 1;
+  min-width: 110px;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.position-stat-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+.position-stat-value { font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.2; }
+.position-stat-value.profit  { color: var(--up); }
+.position-stat-value.loss    { color: var(--down); }
+.position-stat-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+.position-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+
+.position-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 20px;
+  gap: 8px;
+  align-items: center;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.position-item-val  { text-align: right; color: var(--text); }
+.position-item-pnl  { text-align: right; font-weight: 500; }
+.position-item-pnl.profit { color: var(--up); }
+.position-item-pnl.loss   { color: var(--down); }
+
+.position-empty {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  padding: 14px;
+  background: var(--bg2);
+  border: 1px dashed var(--bg4);
+  border-radius: var(--radius-sm);
+}
+
+.add-position-btn {
+  background: var(--gold-dim);
+  border: 1px solid var(--gold-border);
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.add-position-btn:hover { background: rgba(201,168,76,0.25); }
+
+.del-position {
+  background: none; border: none;
+  color: var(--text3); cursor: pointer;
+  font-size: 15px; padding: 0;
+  transition: color 0.15s; line-height: 1;
+}
+.del-position:hover { color: var(--down); }
+
 /* ─── Alert Panel ─── */
 .alert-panel {
   background: var(--bg2);
@@ -867,6 +982,13 @@ main {
 }
 
 /* ─── Mobile Responsive ─── */
+@media (max-width: 768px) {
+  .platform-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .bank-row { grid-template-columns: 1.5fr 1fr 1fr; }
+  .bank-diff { display: none; }
+  .position-grid { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width: 520px) {
   header { padding: 10px 14px; }
   .logo-text { font-size: 13px; }
@@ -891,6 +1013,12 @@ main {
 
   .chart-wrap { height: 150px; }
   .last-update { display: none; }
+  /* 手机端：隐藏桌面表格，显示卡片 */
+  .bank-table-desktop { display: none; }
+  .bank-table-mobile  { display: block !important; }
+  /* 持仓计算器手机端单列 */
+  .position-grid { grid-template-columns: 1fr; }
+  .position-summary { flex-direction: column; }
 }
 
 @media (max-width: 360px) {
@@ -987,10 +1115,20 @@ main {
       <div class="chart-tabs">
         <button class="chart-tab active" onclick="switchChart('usd',this)">USD/oz</button>
         <button class="chart-tab" onclick="switchChart('cny_gram',this)">CNY/克</button>
+        <span style="width:1px;background:var(--bg4);margin:0 2px;align-self:stretch;"></span>
+        <button class="chart-tab" onclick="switchChart('hist_1m',this)">30日</button>
+        <button class="chart-tab" onclick="switchChart('hist_3m',this)">90日</button>
+        <button class="chart-tab" onclick="switchChart('hist_1y',this)">1年</button>
       </div>
     </div>
     <div class="chart-wrap">
       <canvas id="priceChart"></canvas>
+    </div>
+    <div id="chart-loading" style="display:none;font-size:10px;color:var(--text3);text-align:center;padding:4px;">
+      历史数据加载中…
+    </div>
+    <div id="chart-datasrc" style="font-size:10px;color:var(--text3);margin-top:6px;">
+      本次会话数据 · 刷新后重置
     </div>
   </div>
 
@@ -1020,7 +1158,7 @@ main {
   <!-- ③ 银行积存金 -->
   </div>
 <div class="section-label" onclick="toggleSection('sec-2')" data-sec="sec-bank">银行积存金 · 参考报价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-2">
-  <div class="bank-table">
+  <div class="bank-table bank-table-desktop">
     <div class="bank-row header">
       <span>银行 · 产品</span><span>参考买入</span><span>点差/手续费</span><span>官方渠道</span>
     </div>
@@ -1074,7 +1212,7 @@ main {
     </div>
     <div class="bank-row">
       <div class="bank-name">浙商银行<br><span style="font-size:9px;color:var(--text3)">财富金积存</span></div>
-      <div class="bank-buy" id="bank-czb-price">--</div>
+      <div class="bank-buy" id="bank-czb-price" data-jd="czb">--</div>
       <div class="bank-diff">卖出手续费0.4%</div>
       <div class="bank-link"><a href="https://www.czbank.com/cn/personal/ebank/fwjs/web1_4405/" target="_blank">前往↗</a></div>
     </div>
@@ -1099,6 +1237,12 @@ main {
         数据来源：AU9999 现货价取自
         <span id="bank-formula-src" class="bank-source-badge">获取中…</span>
         实时行情，点差参考各行公告披露数据。<br>
+        <span id="jd-status-line" style="display:none;font-size:10px;">
+          ✅ 京东实时补充：浙商
+          <span id="jd-czb-display" style="color:var(--up);font-weight:500;">--</span>
+          · 民生 <span id="jd-minsheng-display" style="color:var(--up);font-weight:500;">--</span>
+          · 已覆盖估算值
+        </span><br>
         点差会随金价波动<strong style="color:var(--text2)">动态调整</strong>，以下为近期固定手续费参考值，非实时买卖价差。<br>
         <strong style="color:var(--gold)">⚠ 实际成交价以各行 App 当时报价为准，本页仅供参考。</strong>
       </div>
@@ -1106,6 +1250,14 @@ main {
     <div class="bank-note">
       ※ 各行起购门槛约 700–1,000 元/次（随金价上调动态调整）。<br>
       ※ 浙商银行 10 克起可兑换实物黄金；工商银行需 20 克起。
+    </div>
+  </div>
+
+  <!-- 手机端银行卡片（≤520px 通过 CSS 显示） -->
+  <div class="bank-table-mobile" style="display:none;">
+    <div id="bank-mobile-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div class="bank-note" style="margin-top:8px;">
+      ※ 参考买入价 = AU9999 + 点差估算，以各行 App 实时报价为准。
     </div>
   </div>
 
@@ -1312,7 +1464,91 @@ main {
 
   </div>
 
-  <!-- ⑦ 价格预警 -->
+  <!-- ⑦ 持仓成本计算器 -->
+  </div>
+<div class="section-label" onclick="toggleSection('sec-7')" data-sec="sec-pos">持仓成本计算器<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-7">
+
+  <!-- 汇总统计 -->
+  <div class="position-summary" id="pos-summary" style="display:none;">
+    <div class="position-stat">
+      <div class="position-stat-label">总持仓</div>
+      <div class="position-stat-value" id="pos-total-gram">--</div>
+    </div>
+    <div class="position-stat">
+      <div class="position-stat-label">总成本</div>
+      <div class="position-stat-value" id="pos-total-cost">--</div>
+    </div>
+    <div class="position-stat">
+      <div class="position-stat-label">当前市值</div>
+      <div class="position-stat-value" id="pos-market-val">--</div>
+    </div>
+    <div class="position-stat">
+      <div class="position-stat-label">浮动盈亏</div>
+      <div class="position-stat-value neutral" id="pos-pnl">--</div>
+      <div class="position-stat-sub" id="pos-pnl-pct">--</div>
+    </div>
+    <div class="position-stat">
+      <div class="position-stat-label">持仓均价</div>
+      <div class="position-stat-value" id="pos-avg-cost">--</div>
+    </div>
+  </div>
+
+  <!-- 持仓记录列表 -->
+  <div class="position-list" id="pos-list">
+    <div class="position-empty" id="pos-empty">暂无持仓记录，在下方添加后自动计算盈亏</div>
+  </div>
+
+  <!-- 添加表单 -->
+  <div class="position-grid">
+    <div class="position-input-card">
+      <label>品种</label>
+      <select id="pos-type">
+        <optgroup label="── 上海金现货 ──">
+          <option value="au9999">上海金 AU9999（元/克）</option>
+        </optgroup>
+        <optgroup label="── 国际金价 ──">
+          <option value="usd">国际现货金（USD/oz）</option>
+          <option value="cny">国际现货金（CNY/oz）</option>
+          <option value="cny_gram">国际现货金（CNY/克）</option>
+        </optgroup>
+        <optgroup label="── 黄金 ETF ──">
+          <option value="etf_518880">华安黄金 ETF 518880</option>
+          <option value="etf_159934">易方达黄金 ETF 159934</option>
+          <option value="etf_159937">博时黄金 ETF 159937</option>
+          <option value="etf_518850">华夏黄金 ETF 518850</option>
+          <option value="etf_518680">富国黄金 ETF 518680</option>
+          <option value="etf_159830">国泰黄金 ETF 159830</option>
+        </optgroup>
+        <optgroup label="── 银行积存金（参考） ──">
+          <option value="bank_icbc">工商银行 如意金积存</option>
+          <option value="bank_ccb">建设银行 易存金</option>
+          <option value="bank_abc">农业银行 存金通</option>
+          <option value="bank_boc">中国银行 积存金</option>
+          <option value="bank_bocom">交通银行 囤金宝</option>
+          <option value="bank_psbc">邮储银行 黄金积存</option>
+          <option value="bank_cmb">招商银行 黄金活期</option>
+          <option value="bank_czb">浙商银行 财富金积存</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="position-input-card">
+      <label>买入均价</label>
+      <input type="number" id="pos-cost" placeholder="例：780.50" step="0.01" min="0">
+    </div>
+    <div class="position-input-card">
+      <label>持仓数量（克/份）</label>
+      <input type="number" id="pos-amount" placeholder="例：10.5" step="0.01" min="0">
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+    <button class="add-position-btn" onclick="addPosition()">+ 添加持仓</button>
+    <span style="font-size:10px;color:var(--text3);">持仓数据保存在本地，刷新不丢失</span>
+  </div>
+  <div style="font-size:10px;color:var(--text3);line-height:1.7;padding:8px 12px;background:var(--bg2);border-radius:var(--radius-sm);border:1px solid var(--bg4);">
+    ⚠ 盈亏基于当前实时价格估算，不含手续费、税费及买卖点差成本。仅供参考，不构成投资建议。
+  </div>
+
+  <!-- ⑧ 价格预警 -->
   </div>
 <div class="section-label" onclick="toggleSection('sec-6')" data-sec="sec-alert">价格预警<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-6">
   <div class="alert-panel">
@@ -1416,6 +1652,7 @@ const I18N = {
     'status-auto': '自动刷新每 60 秒 · 网页开启时有效',
     'goto': '前往↗',
     'open': '打开↗',
+    'sec-pos': '持仓成本计算器',
   },
   en: {
     title:        'Gold Monitor',
@@ -1449,6 +1686,7 @@ const I18N = {
     'status-auto': 'Auto-refresh every 60s · Active while page is open',
     'goto': 'Visit↗',
     'open': 'Open↗',
+    'sec-pos': 'Position P&L Calculator',
   }
 };
 
@@ -1885,6 +2123,77 @@ function updateBankPrices(base) {
   });
 }
 
+// ─── 京东金融补充接口（锦上添花层）─────────────────────────────────
+// 接口来源：逆向 jdjr.jd.com XHR，无官方文档，可能随时失效
+// 成功：覆盖相应银行估算值 + 更新公式框来源标注
+// 失败：静默降级，现有估算值不受影响，用户无感知
+const JD_MINSHENG_URL = 'https://api.jdjygold.com/gw/generic/hj/h5/m/latestPrice';
+const JD_CZB_URL      = 'https://api.jdjygold.com/gw2/generic/jrm/h5/m/stdLatestPrice?productSku=1961543816';
+
+async function fetchJDGold() {
+  let minshengPrice = null, czbPrice = null;
+
+  // ── 民生积存金（GET）
+  try {
+    const res = await fetch(JD_MINSHENG_URL, { mode: 'cors' });
+    if (res.ok) {
+      const json = await res.json();
+      const d = json?.resultData?.datas;
+      const p = parseFloat(d?.buyPrice ?? d?.price);
+      if (!isNaN(p) && p > 0) { minshengPrice = p; console.log('[JD] 民生:', p); }
+    }
+  } catch(e) { console.debug('[JD] 民生失败（静默）'); }
+
+  // ── 浙商积存金（POST）
+  try {
+    const res = await fetch(JD_CZB_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const d = json?.resultData?.datas;
+      const p = parseFloat(d?.price ?? d?.buyPrice);
+      if (!isNaN(p) && p > 0) { czbPrice = p; console.log('[JD] 浙商:', p); }
+    }
+  } catch(e) { console.debug('[JD] 浙商失败（静默）'); }
+
+  if (!minshengPrice && !czbPrice) return; // 全部失败，静默退出
+
+  state.jd.lastSuccess = Date.now();
+  if (minshengPrice) state.jd.minsheng = minshengPrice;
+  if (czbPrice) {
+    state.jd.czb = czbPrice;
+    // 覆盖浙商银行显示价格（绿色标记为真实报价）
+    const el = document.getElementById('bank-czb-price');
+    if (el) {
+      el.textContent = '¥' + czbPrice.toFixed(2);
+      el.title = '京东金融实时报价（非估算）';
+      el.style.color = 'var(--up)';
+    }
+    renderBankMobileCards();
+  }
+
+  // 更新公式框状态行
+  const line = document.getElementById('jd-status-line');
+  const czbd = document.getElementById('jd-czb-display');
+  const msd  = document.getElementById('jd-minsheng-display');
+  if (line) line.style.display = 'inline';
+  if (czbd && czbPrice)      czbd.textContent = '¥' + czbPrice.toFixed(2);
+  if (msd  && minshengPrice) msd.textContent  = '¥' + minshengPrice.toFixed(2);
+
+  // 更新底部来源栏
+  const parts = [];
+  if (minshengPrice) parts.push('民生积存金');
+  if (czbPrice)      parts.push('浙商积存金');
+  const base = state.sources.domestic || '腾讯证券 qt.gtimg.cn';
+  if (!base.includes('京东')) {
+    state.sources.domestic = base + `（+京东实时：${parts.join('·')}）`;
+    updateSourceBar();
+  }
+}
+
 // ─── Fetch ETFs — Tencent API ─────────────────────────
 async function fetchETFs() {
   const etfList = [
@@ -1967,15 +2276,23 @@ function initChart() {
 function switchChart(mode, btn) {
   state.chartMode = mode;
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  updateChart();
+  if (btn) btn.classList.add('active');
+
+  if (mode.startsWith('hist_')) {
+    fetchHistoricalChart(mode);
+  } else {
+    // 切回会话模式时重置数据源说明
+    const srcEl = document.getElementById('chart-datasrc');
+    if (srcEl) srcEl.textContent = '本次会话数据 · 刷新后重置';
+    updateChart();
+  }
 }
 
 function updateChart() {
   if (!chart) return;
-  const data = state.chartHistory[state.chartMode];
+  const data = state.chartHistory[state.chartMode] || [];
   chart.data.labels = data.map(d => d.t.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'}));
-  chart.data.datasets[0].data = data.map(d => d.v);
+  chart.data.datasets[0].data  = data.map(d => d.v);
   chart.data.datasets[0].label = state.chartMode === 'usd' ? 'USD/oz' : 'CNY/克';
   chart.update('none');
 }
@@ -2085,6 +2402,315 @@ function playAlertSound() {
   } catch(e) { console.warn('Audio not available'); }
 }
 
+// ─── 持仓品种自定义搜索下拉 ──────────────────────────────────────────
+const POS_OPTIONS = [
+  { group: '上海金现货',        value: 'au9999',      label: '上海金 AU9999（元/克）' },
+  { group: '国际金价',          value: 'usd',         label: '国际现货金（USD/oz）' },
+  { group: '国际金价',          value: 'cny',         label: '国际现货金（CNY/oz）' },
+  { group: '国际金价',          value: 'cny_gram',    label: '国际现货金（CNY/克）' },
+  { group: '黄金 ETF',          value: 'etf_518880',  label: '华安黄金 ETF 518880' },
+  { group: '黄金 ETF',          value: 'etf_159934',  label: '易方达黄金 ETF 159934' },
+  { group: '黄金 ETF',          value: 'etf_159937',  label: '博时黄金 ETF 159937' },
+  { group: '黄金 ETF',          value: 'etf_518850',  label: '华夏黄金 ETF 518850' },
+  { group: '黄金 ETF',          value: 'etf_518680',  label: '富国黄金 ETF 518680' },
+  { group: '黄金 ETF',          value: 'etf_159830',  label: '国泰黄金 ETF 159830' },
+  { group: '银行积存金（参考）', value: 'bank_icbc',   label: '工商银行 如意金积存' },
+  { group: '银行积存金（参考）', value: 'bank_ccb',    label: '建设银行 易存金' },
+  { group: '银行积存金（参考）', value: 'bank_abc',    label: '农业银行 存金通' },
+  { group: '银行积存金（参考）', value: 'bank_boc',    label: '中国银行 积存金' },
+  { group: '银行积存金（参考）', value: 'bank_bocom',  label: '交通银行 囤金宝' },
+  { group: '银行积存金（参考）', value: 'bank_psbc',   label: '邮储银行 黄金积存' },
+  { group: '银行积存金（参考）', value: 'bank_cmb',    label: '招商银行 黄金活期' },
+  { group: '银行积存金（参考）', value: 'bank_czb',    label: '浙商银行 财富金积存' },
+];
+
+function renderPosDropdownList(filter) {
+  const list = document.getElementById('pos-dropdown-list');
+  if (!list) return;
+  const kw = (filter || '').toLowerCase();
+  const filtered = kw
+    ? POS_OPTIONS.filter(o => o.label.toLowerCase().includes(kw) || o.group.toLowerCase().includes(kw))
+    : POS_OPTIONS;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="pos-dropdown-empty">没有匹配的品种</div>';
+    return;
+  }
+
+  const currentVal = document.getElementById('pos-type')?.value;
+  let html = '', lastGroup = null;
+  filtered.forEach(o => {
+    if (!kw && o.group !== lastGroup) {
+      html += `<div class="pos-dropdown-group">${o.group}</div>`;
+      lastGroup = o.group;
+    }
+    const sel = o.value === currentVal ? ' selected' : '';
+    html += `<div class="pos-dropdown-item${sel}" onclick="selectPosOption('${o.value}','${o.label.replace(/'/g,String.fromCharCode(39))}')">${o.label}</div>`;
+  });
+  list.innerHTML = html;
+}
+
+function togglePosDropdown() {
+  const wrap = document.getElementById('pos-select-wrap');
+  const dd   = document.getElementById('pos-dropdown');
+  const inp  = document.getElementById('pos-search-input');
+  if (dd.classList.contains('open')) {
+    closePosDropdown();
+  } else {
+    wrap.classList.add('open');
+    dd.classList.add('open');
+    renderPosDropdownList('');
+    if (inp) { inp.value = ''; setTimeout(() => inp.focus(), 50); }
+  }
+}
+
+function closePosDropdown() {
+  document.getElementById('pos-select-wrap')?.classList.remove('open');
+  document.getElementById('pos-dropdown')?.classList.remove('open');
+}
+
+function selectPosOption(value, label) {
+  document.getElementById('pos-type').value = value;
+  document.getElementById('pos-select-display').textContent = label;
+  closePosDropdown();
+}
+
+function filterPosOptions(kw) { renderPosDropdownList(kw); }
+
+/* 点击页面其他区域关闭下拉 */
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('pos-select-wrap');
+  if (wrap && !wrap.contains(e.target)) closePosDropdown();
+});
+
+// ─── P1 持仓成本计算器 ────────────────────────────────────────────────
+let positions = JSON.parse(localStorage.getItem('goldPositions') || '[]');
+
+// 品种 → 当前价格映射
+function getPositionPrice(type) {
+  switch (type) {
+    case 'au9999':      return state.au9999;
+    case 'usd':         return state.usd;
+    case 'cny':         return state.cny;
+    case 'cny_gram':    return state.cny_gram;
+    case 'etf_518880':  return state.etfs['518880'];
+    case 'etf_159934':  return state.etfs['159934'];
+    case 'etf_159937':  return state.etfs['159937'];
+    case 'etf_518850':  return state.etfs['518850'];
+    case 'etf_518680':  return state.etfs['518680'];
+    case 'etf_159830':  return state.etfs['159830'];
+    // 银行积存金：取 AU9999 + 各行点差（与 updateBankPrices 一致）
+    case 'bank_icbc':   return state.au9999 ? state.au9999 + 3   : null;
+    case 'bank_ccb':    return state.au9999 ? state.au9999 + 3   : null;
+    case 'bank_abc':    return state.au9999 ? state.au9999 + 2.5 : null;
+    case 'bank_boc':    return state.au9999 ? state.au9999 + 4   : null;
+    case 'bank_bocom':  return state.au9999 ? state.au9999 + 3   : null;
+    case 'bank_psbc':   return state.au9999 ? state.au9999 + 3   : null;
+    case 'bank_cmb':    return state.au9999 ? state.au9999 + 5   : null;
+    case 'bank_czb':    return state.au9999 ? state.au9999 * 1.004 : null;
+    default:            return null;
+  }
+}
+
+const POS_TYPE_LABEL = {
+  au9999:      'AU9999 元/克',
+  usd:         '国际金 USD/oz',
+  cny:         '国际金 CNY/oz',
+  cny_gram:    '国际金 CNY/克',
+  etf_518880:  '华安 ETF 518880',
+  etf_159934:  '易方达 ETF 159934',
+  etf_159937:  '博时 ETF 159937',
+  etf_518850:  '华夏 ETF 518850',
+  etf_518680:  '富国 ETF 518680',
+  etf_159830:  '国泰 ETF 159830',
+  bank_icbc:   '工行如意金积存',
+  bank_ccb:    '建行易存金',
+  bank_abc:    '农行存金通',
+  bank_boc:    '中行积存金',
+  bank_bocom:  '交行囤金宝',
+  bank_psbc:   '邮储黄金积存',
+  bank_cmb:    '招行黄金活期',
+  bank_czb:    '浙商财富金',
+};
+
+function addPosition() {
+  const type   = document.getElementById('pos-type').value;
+  const cost   = parseFloat(document.getElementById('pos-cost').value);
+  const amount = parseFloat(document.getElementById('pos-amount').value);
+  if (!cost || isNaN(cost) || cost <= 0)   { showToast('请输入有效的买入均价'); return; }
+  if (!amount || isNaN(amount) || amount <= 0) { showToast('请输入有效的持仓数量'); return; }
+  positions.push({ type, cost, amount, addedAt: Date.now() });
+  localStorage.setItem('goldPositions', JSON.stringify(positions));
+  document.getElementById('pos-cost').value   = '';
+  document.getElementById('pos-amount').value = '';
+  renderPositions();
+  showToast('持仓已添加');
+}
+
+function removePosition(i) {
+  positions.splice(i, 1);
+  localStorage.setItem('goldPositions', JSON.stringify(positions));
+  renderPositions();
+}
+
+function renderPositions() {
+  const list    = document.getElementById('pos-list');
+  const empty   = document.getElementById('pos-empty');
+  const summary = document.getElementById('pos-summary');
+  if (!list) return;
+
+  if (positions.length === 0) {
+    list.innerHTML = '<div class="position-empty" id="pos-empty">暂无持仓记录，在下方添加后自动计算盈亏</div>';
+    if (summary) summary.style.display = 'none';
+    return;
+  }
+
+  if (summary) summary.style.display = 'flex';
+
+  let totalCost = 0, totalMarket = 0, totalGram = 0;
+  const rows = positions.map((p, i) => {
+    const currentPrice = getPositionPrice(p.type);
+    const costTotal    = p.cost * p.amount;
+    const marketVal    = currentPrice ? currentPrice * p.amount : null;
+    const pnl          = marketVal != null ? marketVal - costTotal : null;
+    const pnlPct       = pnl != null ? (pnl / costTotal * 100) : null;
+    const pnlClass     = pnl == null ? '' : pnl >= 0 ? 'profit' : 'loss';
+    const pnlStr       = pnl == null ? '价格获取中'
+      : (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + ' (' + (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%)';
+
+    totalCost   += costTotal;
+    if (marketVal != null) totalMarket += marketVal;
+    // 仅 AU9999 品种计入克数汇总
+    if (p.type === 'au9999') totalGram += p.amount;
+
+    return `<div class="position-item">
+      <span class="position-item-label">${POS_TYPE_LABEL[p.type] || p.type}</span>
+      <span class="position-item-val">${p.amount} 份/克</span>
+      <span class="position-item-val">均价 ${p.cost.toFixed(2)}</span>
+      <span class="position-item-pnl ${pnlClass}">${pnlStr}</span>
+      <button class="del-position" onclick="removePosition(${i})" title="删除">×</button>
+    </div>`;
+  });
+
+  list.innerHTML = rows.join('');
+
+  // 汇总
+  const totalPnl    = totalMarket - totalCost;
+  const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost * 100) : 0;
+  const pnlClass    = totalPnl >= 0 ? 'profit' : 'loss';
+
+  const se = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  const sc = (id, cls) => { const el = document.getElementById(id); if (el) { el.className = 'position-stat-value ' + cls; } };
+
+  if (totalGram > 0) se('pos-total-gram', totalGram.toFixed(2) + ' 克');
+  else               se('pos-total-gram', positions.length + ' 笔');
+  se('pos-total-cost',   '¥' + totalCost.toFixed(2));
+  se('pos-market-val',   totalMarket > 0 ? '¥' + totalMarket.toFixed(2) : '部分获取中');
+  se('pos-pnl',          (totalPnl >= 0 ? '+' : '') + '¥' + totalPnl.toFixed(2));
+  se('pos-pnl-pct',      (totalPnlPct >= 0 ? '+' : '') + totalPnlPct.toFixed(2) + '%');
+  se('pos-avg-cost',     totalGram > 0
+    ? '¥' + (totalCost / totalGram).toFixed(2) + '/克'
+    : '--');
+  sc('pos-pnl', pnlClass);
+}
+
+// ─── P2a 历史走势图（Yahoo Finance GC=F 免费接口）──────────────────────
+let histCache = {};  // { '1m': [...], '3m': [...], '1y': [...] }
+
+const HIST_RANGE = {
+  hist_1m: { range: '1mo',  interval: '1d',  label: '近30日 黄金期货（Yahoo Finance GC=F）' },
+  hist_3m: { range: '3mo',  interval: '1d',  label: '近90日 黄金期货（Yahoo Finance GC=F）' },
+  hist_1y: { range: '1y',   interval: '1wk', label: '近1年 黄金期货（Yahoo Finance GC=F）' },
+};
+
+async function fetchHistoricalChart(mode) {
+  const cfg = HIST_RANGE[mode];
+  if (!cfg) return;
+
+  // 使用缓存（同一会话内避免重复请求）
+  if (histCache[mode]) {
+    renderHistChart(histCache[mode], cfg.label);
+    return;
+  }
+
+  const loadingEl = document.getElementById('chart-loading');
+  if (loadingEl) loadingEl.style.display = 'block';
+
+  try {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/GC=F?range=${cfg.range}&interval=${cfg.interval}&includePrePost=false`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Yahoo Finance ' + res.status);
+    const json = await res.json();
+    const result = json.chart?.result?.[0];
+    if (!result) throw new Error('No data');
+
+    const timestamps = result.timestamp;
+    const closes     = result.indicators.quote[0].close;
+
+    const data = timestamps.map((ts, i) => ({
+      t: new Date(ts * 1000),
+      v: closes[i],
+    })).filter(d => d.v != null);
+
+    histCache[mode] = data;
+    renderHistChart(data, cfg.label);
+  } catch(e) {
+    console.warn('[Chart] 历史数据获取失败:', e.message);
+    showToast('历史数据暂时无法获取，请稍后再试');
+    // 退回到会话数据
+    switchChart('usd', document.getElementById('tab-session-usd') || document.querySelector('.chart-tab'));
+  } finally {
+    if (loadingEl) loadingEl.style.display = 'none';
+  }
+}
+
+function renderHistChart(data, sourceLabel) {
+  if (!chart) return;
+  const srcEl = document.getElementById('chart-datasrc');
+  if (srcEl) srcEl.textContent = sourceLabel + ' · 仅供参考，非实时现货价';
+
+  chart.data.labels = data.map(d =>
+    d.t.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  );
+  chart.data.datasets[0].data  = data.map(d => d.v);
+  chart.data.datasets[0].label = 'USD/oz（期货）';
+  chart.update('none');
+}
+
+// ─── P2b 手机端银行卡片渲染 ───────────────────────────────────────────
+const BANK_MOBILE_DATA = [
+  { id: 'icbc',  name: '工商银行', product: '如意金积存',     spread: 3,    url: 'https://m.icbc.com.cn' },
+  { id: 'ccb',   name: '建设银行', product: '建行金·易存金',  spread: 3,    url: 'https://wap.ccb.com' },
+  { id: 'abc',   name: '农业银行', product: '存金通',         spread: 2.5,  url: 'https://mobilebank.abchina.com' },
+  { id: 'boc',   name: '中国银行', product: '积存金',         spread: 4,    url: 'https://ebsbank.boc.cn' },
+  { id: 'bocom', name: '交通银行', product: '贵金属钱包·囤金宝', spread: 3, url: 'https://m.bankcomm.com' },
+  { id: 'psbc',  name: '邮储银行', product: '黄金积存',       spread: 3,    url: 'https://msb.psbc.com' },
+  { id: 'cmb',   name: '招商银行', product: '黄金活期',       spread: 5,    url: 'https://m.cmbchina.com' },
+  { id: 'cib',   name: '兴业银行', product: '黄金积存',       spread: 3,    url: 'https://mbank.cib.com.cn' },
+  { id: 'czb',   name: '浙商银行', product: '财富金积存',     spread: null, url: 'https://www.czbank.com/cn/personal/ebank/fwjs/web1_4405/' },
+  { id: 'ceb',   name: '光大银行', product: '黄金积存',       spread: 3,    url: 'https://m.cebbank.com' },
+];
+
+function renderBankMobileCards() {
+  const container = document.getElementById('bank-mobile-list');
+  if (!container) return;
+  container.innerHTML = BANK_MOBILE_DATA.map(b => {
+    const priceEl = document.getElementById('bank-' + b.id + '-price');
+    const price   = priceEl ? priceEl.textContent : '--';
+    const spread  = b.spread ? `+${b.spread}元/克` : '卖出0.4%';
+    return `<div style="background:var(--bg2);border:1px solid var(--bg4);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:12px;color:var(--text);font-weight:500;">${b.name}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px;">${b.product} · 点差${spread}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="font-size:16px;color:var(--gold-light);font-weight:500;">${price}</div>
+        <a href="${b.url}" target="_blank" style="font-size:10px;color:var(--gold);text-decoration:none;padding:3px 8px;border:1px solid var(--gold-border);border-radius:4px;">前往↗</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ─── Main Refresh ─────────────────────────────────────
 async function refreshAll() {
   setRefreshing(true);
@@ -2096,9 +2722,16 @@ async function refreshAll() {
     fetchETFs(),
   ]);
 
+  // 京东补充层：主要数据完成后请求，失败不影响主流程
+  fetchJDGold().catch(() => {});
+
   updateTimestamp();
   setRefreshing(false);
   document.getElementById('status-text').textContent = '自动刷新每 60 秒 · 网页开启时有效';
+
+  // 刷新后更新持仓盈亏和手机端银行卡片
+  renderPositions();
+  renderBankMobileCards();
 
   // Restart ticker if page is hidden
   if (document.hidden) { stopTitleTicker(); startTitleTicker(); }
@@ -2114,7 +2747,9 @@ function startAutoRefresh() {
 window.addEventListener('DOMContentLoaded', () => {
   initChart();
   renderAlerts();
+  renderPositions();
   restoreSectionStates();
+  updateTimestamp();   /* 立即显示当前时间，不等 API 返回 */
   refreshAll();
   startAutoRefresh();
 
