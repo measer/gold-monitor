@@ -1980,16 +1980,28 @@ async function fetchInternational() {
 // ─── 腾讯接口返回 GBK 编码，必须用 ArrayBuffer + TextDecoder 解码 ──
 // 直接 r.text() 用 UTF-8 解码会导致中文乱码，但 ~ 分隔符是 ASCII，
 // 价格字段是纯数字，实测解析仍能成功；为彻底稳定，显式用 GBK 解码。
+// 通用 GBK 解码 fetch
+// 策略：先直连（快，0延迟）；CORS 失败时自动走 allorigins 代理（慢约1s但稳定）
 async function fetchGBK(url) {
-  const r = await fetch(url, { mode: 'cors' });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const buf = await r.arrayBuffer();
+  // ① 直连
   try {
-    return new TextDecoder('gbk').decode(buf);
-  } catch(e) {
-    // 极少数浏览器不支持 gbk label，fallback 到 gb2312
-    return new TextDecoder('gb2312').decode(buf);
+    const r = await fetch(url, { mode: 'cors' });
+    if (!r.ok) throw new Error('direct HTTP ' + r.status);
+    const buf = await r.arrayBuffer();
+    try { return new TextDecoder('gbk').decode(buf); }
+    catch(e) { return new TextDecoder('gb2312').decode(buf); }
+  } catch(directErr) {
+    // CORS 或网络错误 → 走代理
+    console.debug('[fetchGBK] 直连失败，切代理:', directErr.message);
   }
+
+  // ② allorigins 代理（自动处理 CORS）
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const r2 = await fetch(proxyUrl);
+  if (!r2.ok) throw new Error('proxy HTTP ' + r2.status);
+  const wrapper = await r2.json();
+  // allorigins 返回文本，腾讯行情是纯 ASCII+数字，编码问题可忽略
+  return wrapper.contents;
 }
 
 // ─── 解析 AU9999 文本（腾讯 ~分隔格式）────────────────────────────
@@ -2017,7 +2029,7 @@ async function fetchDomestic() {
       srcName = '腾讯证券 qt.gtimg.cn';
       console.log('[AU9999] 腾讯接口成功，价格:', parsed.price);
     }
-  } catch(e) { console.warn('[AU9999] 腾讯失败:', e.message); }
+  } catch(e) { console.warn('[AU9999] 腾讯失败（含代理）:', e.message); }
 
   // ② 国际金价换算（兜底，仅腾讯完全不可用时触发）
   if (!parsed && state.cny_gram) {
@@ -2133,26 +2145,27 @@ const JD_CZB_URL      = 'https://api.jdjygold.com/gw2/generic/jrm/h5/m/stdLatest
 async function fetchJDGold() {
   let minshengPrice = null, czbPrice = null;
 
-  // ── 民生积存金（GET）
+  // ── 民生积存金（GET → allorigins 代理）
   try {
-    const res = await fetch(JD_MINSHENG_URL, { mode: 'cors' });
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(JD_MINSHENG_URL)}`;
+    const res = await fetch(proxyUrl);
     if (res.ok) {
-      const json = await res.json();
+      const wrapper = await res.json();
+      const json = JSON.parse(wrapper.contents);
       const d = json?.resultData?.datas;
       const p = parseFloat(d?.buyPrice ?? d?.price);
       if (!isNaN(p) && p > 0) { minshengPrice = p; console.log('[JD] 民生:', p); }
     }
   } catch(e) { console.debug('[JD] 民生失败（静默）'); }
 
-  // ── 浙商积存金（POST）
+  // ── 浙商积存金（allorigins 仅支持 GET，改用 GET 方式请求）
+  // 接口 GET 方式同样有效（body 为空时服务端接受 GET）
   try {
-    const res = await fetch(JD_CZB_URL, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(JD_CZB_URL)}`;
+    const res = await fetch(proxyUrl);
     if (res.ok) {
-      const json = await res.json();
+      const wrapper = await res.json();
+      const json = JSON.parse(wrapper.contents);
       const d = json?.resultData?.datas;
       const p = parseFloat(d?.price ?? d?.buyPrice);
       if (!isNaN(p) && p > 0) { czbPrice = p; console.log('[JD] 浙商:', p); }
