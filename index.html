@@ -2005,14 +2005,33 @@ async function fetchGBK(url) {
 }
 
 // ─── 解析 AU9999 文本（腾讯 ~分隔格式）────────────────────────────
+// 支持直连（GBK解码正常）和代理（可能有编码问题）两种情况
 function parseTencentAU(text) {
-  const m = text.match(/"([^"]+)"/);
-  if (!m) return null;
-  const p = m[1].split('~');
-  // [0]=市场类型 [1]=名称 [2]=代码 [3]=现价 [4]=涨跌额 [5]=涨跌幅%
-  const price = parseFloat(p[3]);
-  if (isNaN(price) || price <= 0) return null;
-  return { price, change: parseFloat(p[4]) || 0, changeP: parseFloat(p[5]) || 0 };
+  if (!text) return null;
+
+  // 方法1：标准格式 v_nh_Au9999="字段1~字段2~..."
+  const m1 = text.match(/="([^"]+)"/);
+  if (m1) {
+    const p = m1[1].split('~');
+    const price = parseFloat(p[3]);
+    if (!isNaN(price) && price > 0) {
+      return { price, change: parseFloat(p[4]) || 0, changeP: parseFloat(p[5]) || 0 };
+    }
+  }
+
+  // 方法2：宽松匹配，直接从文本找第一个合理价格（800-2000 元/克范围）
+  // 应对代理编码破坏引号的情况
+  const nums = text.match(/\d{3,4}\.\d{2}/g);
+  if (nums) {
+    for (const n of nums) {
+      const price = parseFloat(n);
+      if (price >= 400 && price <= 2000) {  // 合理金价范围 元/克
+        return { price, change: 0, changeP: 0 };
+      }
+    }
+  }
+
+  return null;
 }
 
 // ─── Fetch Domestic — 腾讯（GBK正确解码）→ 国际金价兜底 ─────────────
@@ -2031,17 +2050,27 @@ async function fetchDomestic() {
     }
   } catch(e) { console.warn('[AU9999] 腾讯失败（含代理）:', e.message); }
 
-  // ② 国际金价换算（兜底，仅腾讯完全不可用时触发）
+  // ② 用京东民生报价反推 AU9999（民生点差约3元，比国际汇率换算更准）
+  if (!parsed && state.jd?.minsheng) {
+    const approx = state.jd.minsheng - 3;
+    if (approx > 0) {
+      parsed = { price: approx, change: 0, changeP: 0 };
+      srcName = '京东民生报价反推估算（≈民生价-3元）';
+      console.warn('[AU9999] 腾讯失败，用京东民生反推:', approx);
+    }
+  }
+
+  // ③ 国际金价换算（最终兜底）
   if (!parsed && state.cny_gram) {
     parsed = { price: state.cny_gram, change: 0, changeP: 0 };
     srcName = 'gold-api.com 国际金价换算估算（兜底）';
-    console.warn('[AU9999] 腾讯接口失败，使用国际金价估算');
+    console.warn('[AU9999] 所有来源失败，使用国际金价估算');
   }
 
-  if (!parsed) { console.error('[AU9999] 所有来源失败'); return; }
+  if (!parsed) { console.error('[AU9999] 所有来源均不可用'); return; }
 
   const { price, change, changeP } = parsed;
-  const isEstimate = srcName && srcName.includes('估算');
+  const isEstimate = srcName && (srcName.includes('估算') || srcName.includes('反推'));
 
   state.au9999 = price;
   state.sources.domestic = srcName;
@@ -2054,8 +2083,16 @@ async function fetchDomestic() {
   const note  = document.getElementById('au9999-note');
 
   if (isEstimate) {
-    if (badge) { badge.textContent = '≈ 估算价'; badge.style.cssText = 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid var(--gold-border);'; }
-    if (note)  note.textContent = '⚠ 上海金实时数据暂无法获取，当前为国际金价按实时汇率换算估算值，仅供参考。';
+    const isJDDerived = srcName && srcName.includes('反推');
+    if (badge) {
+      badge.textContent = isJDDerived ? '≈ 京东反推' : '≈ 估算价';
+      badge.style.cssText = isJDDerived
+        ? 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(76,175,122,0.1);color:var(--up);border:1px solid rgba(76,175,122,0.3);'
+        : 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid var(--gold-border);';
+    }
+    if (note) note.textContent = isJDDerived
+      ? `≈ 上海金实时接口暂时不可用，当前价格由京东民生报价（${state.jd.minsheng} 元）反推估算，精度较高，仅供参考。`
+      : '⚠ 上海金实时数据暂无法获取，当前为国际金价按实时汇率换算估算值，仅供参考。';
   } else {
     const now = new Date();
     const day = now.getDay(), tot = now.getHours() * 60 + now.getMinutes();
@@ -2729,14 +2766,17 @@ async function refreshAll() {
   setRefreshing(true);
   document.getElementById('status-text').textContent = '正在刷新…';
 
+  // 第一轮：国际金价 + 京东补充层并发（京东民生价可作为 AU9999 反推依据）
   await Promise.allSettled([
     fetchInternational(),
+    fetchJDGold().catch(() => {}),
+  ]);
+
+  // 第二轮：国内金价 + ETF（此时京东民生价已就位，可用于降级反推）
+  await Promise.allSettled([
     fetchDomestic(),
     fetchETFs(),
   ]);
-
-  // 京东补充层：主要数据完成后请求，失败不影响主流程
-  fetchJDGold().catch(() => {});
 
   updateTimestamp();
   setRefreshing(false);
