@@ -1130,6 +1130,9 @@ main {
     <div id="chart-datasrc" style="font-size:10px;color:var(--text3);margin-top:6px;">
       本次会话数据 · 刷新后重置
     </div>
+    <div id="chart-futures-note" style="display:none;font-size:10px;color:var(--text3);margin-top:2px;padding:4px 8px;background:var(--bg3);border-radius:4px;border-left:2px solid var(--gold-border);">
+      ⚠ 历史数据来源为 COMEX 黄金期货（GC=F），与国内 AU9999 现货存在价差（约 5–30 元/克），仅供趋势参考，不代表实际国内买卖价格。
+    </div>
   </div>
 
   <!-- ② 国内金价 -->
@@ -1916,7 +1919,8 @@ async function fetchInternational() {
 
     // gold-api.com response: { price, symbol, updatedAt, ... }
     const usdPrice = dGold.price;           // USD per troy oz
-    const cnyRate  = dFX.rates?.CNY || 7.25; // USD→CNY exchange rate
+    const cnyRate = dFX.rates?.CNY;
+    if (!cnyRate) throw new Error('CNY rate unavailable');
     const cnyPrice = usdPrice * cnyRate;
 
     const TROY_OZ_TO_GRAM = 31.1035;
@@ -1969,101 +1973,145 @@ async function fetchInternational() {
     checkAlerts();
   } catch (e) {
     console.error('International fetch error:', e);
-    showToast('国际金价获取失败，请检查网络后手动刷新');
+    if (e.message && e.message.includes('CNY rate')) {
+      const el = document.getElementById('price-cny');
+      if (el) { el.textContent = '汇率暂不可用'; el.classList.add('loading'); }
+      showToast('CNY 汇率接口暂时无法获取，人民币价格无法计算');
+    } else {
+      showToast('国际金价获取失败，请检查网络后手动刷新');
+    }
   }
 }
 
-// ─── Fetch Domestic gold (AU9999 only) — Tencent API ──
-// AU9999 = Shanghai Gold Exchange spot price, anchor for all bank deposit gold pricing
-// Trading hours: weekdays 09:00–15:30 and 20:00–02:30 (night session)
-// Outside trading hours Tencent returns last close; price won't change — this is normal
-// ─── 腾讯接口返回 GBK 编码，必须用 ArrayBuffer + TextDecoder 解码 ──
-// 直接 r.text() 用 UTF-8 解码会导致中文乱码，但 ~ 分隔符是 ASCII，
-// 价格字段是纯数字，实测解析仍能成功；为彻底稳定，显式用 GBK 解码。
-// 通用 GBK 解码 fetch
-// 策略：先直连（快，0延迟）；CORS 失败时自动走 allorigins 代理（慢约1s但稳定）
+// ─── 方案B：超时控制包装 ──────────────────────────────────────────────
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(label + ' timeout ' + ms + 'ms')), ms)
+    )
+  ]);
+}
+
+// ─── 通用 GBK fetch：直连 → 3s超时代理 ─────────────────────────────
 async function fetchGBK(url) {
-  // ① 直连
   try {
     const r = await fetch(url, { mode: 'cors' });
-    if (!r.ok) throw new Error('direct HTTP ' + r.status);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     const buf = await r.arrayBuffer();
     try { return new TextDecoder('gbk').decode(buf); }
     catch(e) { return new TextDecoder('gb2312').decode(buf); }
-  } catch(directErr) {
-    // CORS 或网络错误 → 走代理
-    console.debug('[fetchGBK] 直连失败，切代理:', directErr.message);
+  } catch(e) {
+    console.debug('[fetchGBK] 直连失败:', e.message);
   }
-
-  // ② allorigins 代理（自动处理 CORS）
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-  const r2 = await fetch(proxyUrl);
-  if (!r2.ok) throw new Error('proxy HTTP ' + r2.status);
-  const wrapper = await r2.json();
-  // allorigins 返回文本，腾讯行情是纯 ASCII+数字，编码问题可忽略
-  return wrapper.contents;
+  // 代理限制 3s，不让用户等 14s（方案B）
+  try {
+    const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+    const r2 = await withTimeout(fetch(proxy), 3000, 'allorigins');
+    if (!r2.ok) throw new Error('proxy HTTP ' + r2.status);
+    const w = await r2.json();
+    return w.contents;
+  } catch(e) {
+    console.debug('[fetchGBK] 代理失败/超时:', e.message);
+    throw e;
+  }
 }
 
-// ─── 解析 AU9999 文本（腾讯 ~分隔格式）────────────────────────────
-// 支持直连（GBK解码正常）和代理（可能有编码问题）两种情况
+// ─── 方案A：东方财富 JSONP（天然绕过CORS，延迟<200ms）───────────────
+// secid 格式：118.Au9999（上海金交所）, 1.518880（沪ETF）, 0.159934（深ETF）
+// fltt=2 时 f43/f169/f170 已除100，直接是元/克和%
+function fetchEMJsonp(secid, fields) {
+  return new Promise((resolve, reject) => {
+    const cb = 'em_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      delete window[cb]; script.remove();
+      reject(new Error('JSONP timeout'));
+    }, 4000);
+    window[cb] = function(data) {
+      clearTimeout(timer); delete window[cb]; script.remove();
+      resolve(data);
+    };
+    script.onerror = function() {
+      clearTimeout(timer); delete window[cb]; script.remove();
+      reject(new Error('JSONP script error'));
+    };
+    script.src = 'https://push2.eastmoney.com/api/qt/stock/get'
+      + '?secid=' + secid
+      + '&fields=' + fields
+      + '&ut=fa5fd1943c7b386f172d6893dbfba10b'
+      + '&fltt=2&invt=2'
+      + '&cb=' + cb
+      + '&_=' + Date.now();
+    document.head.appendChild(script);
+  });
+}
+
+// ─── 解析腾讯 AU9999 文本（备用格式）────────────────────────────────
 function parseTencentAU(text) {
   if (!text) return null;
-
-  // 方法1：标准格式 v_nh_Au9999="字段1~字段2~..."
-  const m1 = text.match(/="([^"]+)"/);
-  if (m1) {
-    const p = m1[1].split('~');
+  const m = text.match(/="([^"]+)"/);
+  if (m) {
+    const p = m[1].split('~');
     const price = parseFloat(p[3]);
-    if (!isNaN(price) && price > 0) {
+    if (!isNaN(price) && price > 0)
       return { price, change: parseFloat(p[4]) || 0, changeP: parseFloat(p[5]) || 0 };
-    }
   }
-
-  // 方法2：宽松匹配，直接从文本找第一个合理价格（800-2000 元/克范围）
-  // 应对代理编码破坏引号的情况
-  const nums = text.match(/\d{3,4}\.\d{2}/g);
-  if (nums) {
-    for (const n of nums) {
-      const price = parseFloat(n);
-      if (price >= 400 && price <= 2000) {  // 合理金价范围 元/克
-        return { price, change: 0, changeP: 0 };
-      }
-    }
+  // 宽松兜底：扫描合理金价数字
+  const nums = text.match(/\d{3,4}\.\d{2}/g) || [];
+  for (const n of nums) {
+    const v = parseFloat(n);
+    if (v >= 400 && v <= 2000) return { price: v, change: 0, changeP: 0 };
   }
-
   return null;
 }
 
-// ─── Fetch Domestic — 腾讯（GBK正确解码）→ 国际金价兜底 ─────────────
-// 新浪已因 CORS 403 完全封死，移除以避免无效请求和错误日志
+// ─── Fetch Domestic ──────────────────────────────────────────────────
+// ① 东方财富 JSONP（方案A，稳定无CORS，<200ms）
+// → ② 腾讯直连 / 3s代理（原方案备用）
+// → ③ 京东民生反推（积存金价-点差，比汇率估算准）
+// → ④ 国际金价换算（最终兜底）
 async function fetchDomestic() {
   let parsed = null;
   let srcName = null;
 
-  // ① 腾讯（主力，GBK 正确解码）
+  // ① 东方财富 JSONP
   try {
-    const text = await fetchGBK(`https://qt.gtimg.cn/q=nh_Au9999&_=${Date.now()}`);
-    parsed = parseTencentAU(text);
-    if (parsed) {
-      srcName = '腾讯证券 qt.gtimg.cn';
-      console.log('[AU9999] 腾讯接口成功，价格:', parsed.price);
+    const data = await fetchEMJsonp('118.Au9999', 'f43,f169,f170,f60,f44,f45');
+    const d = data && data.data;
+    const price   = d && parseFloat(d.f43);
+    const change  = d && parseFloat(d.f169) || 0;
+    const changeP = d && parseFloat(d.f170) || 0;
+    if (price && !isNaN(price) && price > 0) {
+      parsed = { price, change, changeP };
+      srcName = '东方财富 push2.eastmoney.com（JSONP）';
+      console.log('[AU9999] 东方财富 JSONP 成功:', price);
     }
-  } catch(e) { console.warn('[AU9999] 腾讯失败（含代理）:', e.message); }
+  } catch(e) { console.warn('[AU9999] 东方财富失败:', e.message); }
 
-  // ② 用京东民生报价反推 AU9999（民生点差约3元，比国际汇率换算更准）
-  if (!parsed && state.jd?.minsheng) {
+  // ② 腾讯直连 / 3s代理
+  if (!parsed) {
+    try {
+      const text = await fetchGBK('https://qt.gtimg.cn/q=nh_Au9999&_=' + Date.now());
+      parsed = parseTencentAU(text);
+      if (parsed) { srcName = '腾讯证券 qt.gtimg.cn'; console.log('[AU9999] 腾讯成功:', parsed.price); }
+    } catch(e) { console.warn('[AU9999] 腾讯失败:', e.message); }
+  }
+
+  // ③ 京东民生反推
+  if (!parsed && state.jd && state.jd.minsheng) {
     const approx = state.jd.minsheng - 3;
     if (approx > 0) {
       parsed = { price: approx, change: 0, changeP: 0 };
-      srcName = '京东民生报价反推估算（≈民生价-3元）';
-      console.warn('[AU9999] 腾讯失败，用京东民生反推:', approx);
+      srcName = '京东民生报价反推（≈民生价-3元）';
+      console.warn('[AU9999] 用京东民生反推:', approx);
     }
   }
 
-  // ③ 国际金价换算（最终兜底）
+  // ④ 国际金价换算（最终兜底）
   if (!parsed && state.cny_gram) {
     parsed = { price: state.cny_gram, change: 0, changeP: 0 };
-    srcName = 'gold-api.com 国际金价换算估算（兜底）';
+    srcName = 'gold-api.com 国际金价换算（兜底）';
     console.warn('[AU9999] 所有来源失败，使用国际金价估算');
   }
 
@@ -2244,21 +2292,21 @@ async function fetchJDGold() {
   }
 }
 
-// ─── Fetch ETFs — Tencent API ─────────────────────────
+// ─── Fetch ETFs — 腾讯主力 → 东方财富JSONP备用 ──────────────────────
 async function fetchETFs() {
   const etfList = [
-    { code: '518880', prefix: 'sh' },
-    { code: '159934', prefix: 'sz' },
-    { code: '159937', prefix: 'sz' },
-    { code: '518850', prefix: 'sh' },
-    { code: '518680', prefix: 'sh' },
-    { code: '159830', prefix: 'sz' },
+    { code: '518880', prefix: 'sh', secid: '1.518880' },
+    { code: '159934', prefix: 'sz', secid: '0.159934' },
+    { code: '159937', prefix: 'sz', secid: '0.159937' },
+    { code: '518850', prefix: 'sh', secid: '1.518850' },
+    { code: '518680', prefix: 'sh', secid: '1.518680' },
+    { code: '159830', prefix: 'sz', secid: '0.159830' },
   ];
   const queryStr = etfList.map(e => e.prefix + e.code).join(',');
 
+  let tencentOk = false;
   try {
-    // 腾讯接口返回 GBK，需用 ArrayBuffer + TextDecoder 正确解码
-    const text = await fetchGBK(`https://qt.gtimg.cn/q=${queryStr}&_=${Date.now()}`);
+    const text = await fetchGBK('https://qt.gtimg.cn/q=' + queryStr + '&_=' + Date.now());
     const lines = text.trim().split('\n');
 
     lines.forEach((line, i) => {
@@ -2272,10 +2320,36 @@ async function fetchETFs() {
       setETF(etfList[i].code, price, change || 0, changeP || 0);
     });
     state.sources.etf = '腾讯证券 qt.gtimg.cn';
+    tencentOk = true;
     updateSourceBar();
   } catch(e) {
-    console.warn('ETF fetch error:', e);
-    state.sources.etf = '获取失败';
+    console.warn('[ETF] 腾讯失败，尝试东方财富 JSONP:', e.message);
+  }
+
+  // 东方财富 JSONP 补充（腾讯失败时逐个请求）
+  if (!tencentOk) {
+    const results = await Promise.allSettled(
+      etfList.map(function(etf) {
+        return fetchEMJsonp(etf.secid, 'f43,f169,f170').then(function(data) {
+          return { code: etf.code, data: data };
+        });
+      })
+    );
+    let emCount = 0;
+    results.forEach(function(r) {
+      if (r.status !== 'fulfilled') return;
+      const d = r.value.data && r.value.data.data;
+      const price   = d && parseFloat(d.f43);
+      const change  = d && parseFloat(d.f169) || 0;
+      const changeP = d && parseFloat(d.f170) || 0;
+      if (price && !isNaN(price) && price > 0) {
+        setETF(r.value.code, price, change, changeP);
+        emCount++;
+      }
+    });
+    state.sources.etf = emCount > 0
+      ? '东方财富 JSONP（' + emCount + '/' + etfList.length + '）'
+      : '获取失败';
     updateSourceBar();
   }
 }
@@ -2328,10 +2402,12 @@ function switchChart(mode, btn) {
   document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
+  const futuresNote = document.getElementById('chart-futures-note');
   if (mode.startsWith('hist_')) {
+    if (futuresNote) futuresNote.style.display = 'block';
     fetchHistoricalChart(mode);
   } else {
-    // 切回会话模式时重置数据源说明
+    if (futuresNote) futuresNote.style.display = 'none';
     const srcEl = document.getElementById('chart-datasrc');
     if (srcEl) srcEl.textContent = '本次会话数据 · 刷新后重置';
     updateChart();
