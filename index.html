@@ -898,6 +898,209 @@ main {
 
 .alert-empty { font-size: 11px; color: var(--text3); text-align: center; padding: 8px; }
 
+/* ─── 现货/期货 页面 Tab ─── */
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px 0;
+  border-bottom: 1px solid var(--bg4);
+  background: var(--bg);
+  position: sticky;
+  top: 56px;          /* header 高度下方 */
+  z-index: 90;
+}
+
+.page-tab {
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 7px 18px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  position: relative;
+  bottom: -1px;
+}
+
+.page-tab:hover { color: var(--text2); background: var(--bg3); }
+
+.page-tab.active {
+  background: var(--bg);
+  color: var(--gold-light);
+  border-color: var(--gold-border);
+  border-bottom-color: var(--bg);
+}
+
+/* 页面内容切换动画 */
+.page-view {
+  display: none;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-view.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── 期货板块样式 ─── */
+.futures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.futures-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.futures-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.4;
+}
+
+.futures-card.up { border-color: rgba(76,175,122,0.25); }
+.futures-card.up::before { background: var(--up); opacity: 0.7; }
+.futures-card.down { border-color: rgba(224,80,80,0.25); }
+.futures-card.down::before { background: var(--down); opacity: 0.7; }
+
+.futures-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.futures-price {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--gold-light);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.futures-price.loading { font-size: 18px; color: var(--text3); }
+
+.futures-change {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.futures-change.up { color: var(--up); }
+.futures-change.down { color: var(--down); }
+.futures-change.neutral { color: var(--text3); }
+
+.futures-meta {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.futures-badge {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  background: var(--gold-dim);
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+  vertical-align: middle;
+}
+
+/* 现货期货价差行 */
+.spread-card {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.spread-item { flex: 1; min-width: 120px; }
+.spread-label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+.spread-val { font-size: 15px; font-weight: 500; color: var(--text); }
+.spread-val.pos { color: var(--up); }
+.spread-val.neg { color: var(--down); }
+
+/* 合约信息表 */
+.contract-table {
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.contract-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--bg3);
+  font-size: 11px;
+  align-items: center;
+  gap: 6px;
+}
+
+.contract-row:last-child { border-bottom: none; }
+.contract-row.header {
+  background: var(--bg3);
+  padding: 7px 14px;
+}
+.contract-row.header span { font-size: 9px; letter-spacing: 1px; color: var(--text3); }
+.contract-name { color: var(--text); font-weight: 500; }
+.contract-price { color: var(--gold-light); font-weight: 500; text-align: right; }
+.contract-change.up { color: var(--up); text-align: right; }
+.contract-change.down { color: var(--down); text-align: right; }
+.contract-change.neutral { color: var(--text3); text-align: right; }
+.contract-vol { color: var(--text3); text-align: right; }
+.contract-oi  { color: var(--text3); text-align: right; }
+
+.futures-disclaimer {
+  font-size: 10px;
+  color: var(--text3);
+  padding: 8px 12px;
+  background: var(--bg2);
+  border: 1px solid var(--bg4);
+  border-radius: var(--radius-sm);
+  line-height: 1.7;
+}
+
+@media (max-width: 520px) {
+  .futures-grid { grid-template-columns: 1fr 1fr; }
+  .futures-price { font-size: 22px; }
+  .contract-row { grid-template-columns: 1.2fr 1fr 1fr; }
+  .contract-vol, .contract-oi { display: none; }
+  .page-tabs { top: 48px; padding: 6px 12px 0; }
+  .page-tab { font-size: 11px; padding: 6px 12px; }
+}
+
 /* ─── Ticker bar (tab-away indicator) ─── */
 .status-bar {
   font-size: 10px;
@@ -1063,8 +1266,17 @@ main {
   </div>
 </header>
 
+<!-- 现货/期货 Tab 栏 -->
+<div class="page-tabs">
+  <button class="page-tab active" id="tab-spot" onclick="switchPageTab('spot')">现货行情</button>
+  <button class="page-tab" id="tab-futures" onclick="switchPageTab('futures')">期货行情</button>
+</div>
+
 <!-- Main -->
 <main>
+
+  <!-- ══ 现货视图 ══ -->
+  <div class="page-view active" id="view-spot">
 
   <!-- ① 国际金价 -->
   <div class="section-label" onclick="toggleSection('sec-0')" data-sec="sec-intl">国际金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-0">
@@ -1584,6 +1796,83 @@ main {
     数据来源获取中…
   </div>
 
+  </div><!-- /view-spot -->
+
+  <!-- ══ 期货视图 ══ -->
+  <div class="page-view" id="view-futures">
+
+    <!-- 沪金 + COMEX 主力合约大卡 -->
+    <div class="section-label" style="margin-top:20px;">主力合约<span class="section-line"></span></div>
+    <div class="futures-grid">
+      <div class="futures-card" id="fc-au0">
+        <div class="futures-label">沪金主力 AU0 · 上期所<span class="futures-badge">元/克</span></div>
+        <div class="futures-price loading" id="fp-au0">加载中…</div>
+        <div class="futures-change neutral" id="fc-au0-change">--</div>
+        <div class="futures-meta" id="fm-au0">结算价 -- · 持仓量 --</div>
+      </div>
+      <div class="futures-card" id="fc-gc">
+        <div class="futures-label">COMEX 黄金 GC · 纽约<span class="futures-badge">USD/oz</span></div>
+        <div class="futures-price loading" id="fp-gc">加载中…</div>
+        <div class="futures-change neutral" id="fc-gc-change">--</div>
+        <div class="futures-meta" id="fm-gc">结算价 -- · 最近合约</div>
+      </div>
+    </div>
+
+    <!-- 现货/期货价差 -->
+    <div class="section-label">现货 vs 期货价差<span class="section-line"></span></div>
+    <div class="spread-card" id="spread-card">
+      <div class="spread-item">
+        <div class="spread-label">AU9999 现货（元/克）</div>
+        <div class="spread-val" id="sp-spot">--</div>
+      </div>
+      <div class="spread-item">
+        <div class="spread-label">沪金期货 AU0（元/克）</div>
+        <div class="spread-val" id="sp-futures">--</div>
+      </div>
+      <div class="spread-item">
+        <div class="spread-label">期现价差</div>
+        <div class="spread-val" id="sp-diff">--</div>
+      </div>
+      <div class="spread-item">
+        <div class="spread-label">价差率</div>
+        <div class="spread-val" id="sp-pct">--</div>
+      </div>
+      <div style="flex-basis:100%;font-size:10px;color:var(--text3);margin-top:4px;">
+        正向基差（期货 &gt; 现货）为正常，反映资金成本；负向基差（期货 &lt; 现货）通常出现在市场恐慌或交割临近时。
+      </div>
+    </div>
+
+    <!-- 沪金近月合约列表 -->
+    <div class="section-label">沪金近月合约<span class="section-line"></span></div>
+    <div class="contract-table">
+      <div class="contract-row header">
+        <span>合约</span><span style="text-align:right">最新价</span>
+        <span style="text-align:right">涨跌幅</span>
+        <span style="text-align:right">成交量</span>
+        <span style="text-align:right">持仓量</span>
+      </div>
+      <div id="au-contracts-list">
+        <div style="font-size:11px;color:var(--text3);padding:14px;text-align:center;">合约数据加载中…</div>
+      </div>
+    </div>
+
+    <!-- 期货说明 -->
+    <div class="futures-disclaimer">
+      📌 <strong style="color:var(--text2)">关于期货行情</strong><br>
+      · 沪金期货数据来源：东方财富 JSONP 接口（实时）<br>
+      · COMEX 黄金期货数据来源：Yahoo Finance（约 15 分钟延迟）<br>
+      · 期货价格反映市场对未来某个交割日的预期价格，不等于现货即时买卖价<br>
+      · 国内期货交易时间：工作日 09:00–15:00 · 夜盘 21:00–次日 02:30<br>
+      · 本页仅供参考，不构成投资建议
+    </div>
+
+    <div class="status-bar" style="margin-top:16px;">
+      <span class="dot"></span>
+      <span id="futures-status-text">切换到期货页面后自动加载数据</span>
+    </div>
+
+  </div><!-- /view-futures -->
+
 </main>
 
 <!-- Alert Overlay -->
@@ -1615,6 +1904,7 @@ let state = {
   chartMode: 'usd',
   chartHistory: { usd: [], cny_gram: [] },
   sources: { international: null, domestic: null, etf: null },
+  futures: { au0: null, gc: null },   // 期货主力合约最新价
 };
 let alerts = JSON.parse(localStorage.getItem('goldAlerts') || '[]');
 let refreshTimer = null;
@@ -2837,6 +3127,201 @@ function renderBankMobileCards() {
   }).join('');
 }
 
+// ─── 页面 Tab 切换 ───────────────────────────────────────────────────
+let futuresLoaded = false;  // 期货数据只在首次切换时主动加载
+
+function switchPageTab(tab) {
+  // 更新 Tab 按钮状态
+  document.getElementById('tab-spot').classList.toggle('active', tab === 'spot');
+  document.getElementById('tab-futures').classList.toggle('active', tab === 'futures');
+
+  const spotView    = document.getElementById('view-spot');
+  const futuresView = document.getElementById('view-futures');
+
+  if (tab === 'spot') {
+    futuresView.classList.remove('active');
+    // 短暂延迟再显示，让退场动画先走
+    setTimeout(() => {
+      spotView.style.display = 'block';
+      requestAnimationFrame(() => spotView.classList.add('active'));
+    }, 50);
+    futuresView.addEventListener('transitionend', () => {
+      if (!futuresView.classList.contains('active')) futuresView.style.display = 'none';
+    }, { once: true });
+  } else {
+    spotView.classList.remove('active');
+    setTimeout(() => {
+      futuresView.style.display = 'block';
+      requestAnimationFrame(() => futuresView.classList.add('active'));
+      // 首次切换到期货页才加载数据
+      if (!futuresLoaded) { futuresLoaded = true; loadFuturesData(); }
+    }, 50);
+    spotView.addEventListener('transitionend', () => {
+      if (!spotView.classList.contains('active')) spotView.style.display = 'none';
+    }, { once: true });
+  }
+}
+
+// ─── 期货数据加载 ─────────────────────────────────────────────────────
+const AU_CONTRACTS = [
+  { code: 'AU0',   secid: '113.AU0',   label: '沪金主力' },
+  { code: 'AU2506', secid: '113.AU2506', label: '沪金2506' },
+  { code: 'AU2508', secid: '113.AU2508', label: '沪金2508' },
+  { code: 'AU2510', secid: '113.AU2510', label: '沪金2510' },
+  { code: 'AU2512', secid: '113.AU2512', label: '沪金2512' },
+];
+
+async function loadFuturesData() {
+  const statusEl = document.getElementById('futures-status-text');
+  if (statusEl) statusEl.textContent = '期货数据加载中…';
+
+  await Promise.allSettled([
+    fetchSHGoldFutures(),
+    fetchCOMEXGold(),
+  ]);
+
+  updateSpread();
+  if (statusEl) statusEl.textContent = '自动刷新每 60 秒 · 网页开启时有效';
+}
+
+// ─── 沪金期货：东方财富 JSONP ─────────────────────────────────────────
+async function fetchSHGoldFutures() {
+  // 主力合约
+  try {
+    const data = await fetchEMJsonp('113.AU0', 'f43,f169,f170,f44,f45,f47,f48');
+    const d = data && data.data;
+    const price   = d && parseFloat(d.f43);
+    const change  = d && parseFloat(d.f169) || 0;
+    const changeP = d && parseFloat(d.f170) || 0;
+    const high    = d && parseFloat(d.f44);
+    const low     = d && parseFloat(d.f45);
+    const vol     = d && parseInt(d.f47);
+    const oi      = d && parseInt(d.f48);
+
+    if (price && !isNaN(price) && price > 0) {
+      const priceEl  = document.getElementById('fp-au0');
+      const changeEl = document.getElementById('fc-au0-change');
+      const metaEl   = document.getElementById('fm-au0');
+      const cardEl   = document.getElementById('fc-au0');
+
+      if (priceEl) { priceEl.textContent = price.toFixed(2); priceEl.classList.remove('loading'); }
+      if (changeEl) {
+        const dir = change >= 0 ? 'up' : 'down';
+        const arrow = change >= 0 ? '▲' : '▼';
+        changeEl.textContent = arrow + ' ' + Math.abs(change).toFixed(2) + ' (' + Math.abs(changeP).toFixed(2) + '%)';
+        changeEl.className = 'futures-change ' + dir;
+        if (cardEl) cardEl.className = 'futures-card ' + dir;
+      }
+      if (metaEl) {
+        const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + '万手' : vol + '手') : '--';
+        const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + '万手' : oi  + '手') : '--';
+        metaEl.textContent = '今日高 ' + (high || '--') + ' · 低 ' + (low || '--') + ' · 成交 ' + volStr + ' · 持仓 ' + oiStr;
+      }
+      // 存入 state 供价差计算用
+      state.futures = state.futures || {};
+      state.futures.au0 = price;
+      console.log('[Futures] 沪金 AU0:', price);
+    }
+  } catch(e) { console.warn('[Futures] 沪金主力失败:', e.message); }
+
+  // 近月合约列表
+  const listEl = document.getElementById('au-contracts-list');
+  if (!listEl) return;
+
+  const results = await Promise.allSettled(
+    AU_CONTRACTS.map(c =>
+      fetchEMJsonp(c.secid, 'f43,f169,f170,f47,f48')
+        .then(data => ({ ...c, data }))
+    )
+  );
+
+  let rows = '';
+  results.forEach(r => {
+    if (r.status !== 'fulfilled') return;
+    const { label, data } = r.value;
+    const d = data && data.data;
+    const price   = d && parseFloat(d.f43);
+    const changeP = d && parseFloat(d.f170) || 0;
+    const vol     = d && parseInt(d.f47);
+    const oi      = d && parseInt(d.f48);
+    if (!price || isNaN(price)) return;
+    const dir = changeP >= 0 ? 'up' : 'down';
+    const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + '万' : vol.toString()) : '--';
+    const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + '万' : oi.toString())  : '--';
+    rows += '<div class="contract-row">'
+      + '<span class="contract-name">' + label + '</span>'
+      + '<span class="contract-price">' + price.toFixed(2) + '</span>'
+      + '<span class="contract-change ' + dir + '">' + (changeP >= 0 ? '+' : '') + changeP.toFixed(2) + '%</span>'
+      + '<span class="contract-vol">' + volStr + '</span>'
+      + '<span class="contract-oi">'  + oiStr  + '</span>'
+      + '</div>';
+  });
+  listEl.innerHTML = rows || '<div style="font-size:11px;color:var(--text3);padding:14px;text-align:center;">合约数据暂时无法获取</div>';
+}
+
+// ─── COMEX 黄金：Yahoo Finance（~15分钟延迟，免费）────────────────────
+async function fetchCOMEXGold() {
+  try {
+    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1d&range=5d';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Yahoo ' + res.status);
+    const json = await res.json();
+    const result = json.chart && json.chart.result && json.chart.result[0];
+    if (!result) throw new Error('No result');
+
+    const meta = result.meta;
+    const price      = meta.regularMarketPrice;
+    const prevClose  = meta.chartPreviousClose || meta.previousClose;
+    const change     = price - prevClose;
+    const changeP    = prevClose ? (change / prevClose * 100) : 0;
+    const high       = meta.regularMarketDayHigh;
+    const low        = meta.regularMarketDayLow;
+
+    const priceEl  = document.getElementById('fp-gc');
+    const changeEl = document.getElementById('fc-gc-change');
+    const metaEl   = document.getElementById('fm-gc');
+    const cardEl   = document.getElementById('fc-gc');
+
+    if (priceEl) { priceEl.textContent = price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); priceEl.classList.remove('loading'); }
+    if (changeEl) {
+      const dir = change >= 0 ? 'up' : 'down';
+      const arrow = change >= 0 ? '▲' : '▼';
+      changeEl.textContent = arrow + ' ' + Math.abs(change).toFixed(2) + ' (' + Math.abs(changeP).toFixed(2) + '%)';
+      changeEl.className = 'futures-change ' + dir;
+      if (cardEl) cardEl.className = 'futures-card ' + dir;
+    }
+    if (metaEl) {
+      metaEl.textContent = '今日高 $' + (high ? high.toFixed(2) : '--') + ' · 低 $' + (low ? low.toFixed(2) : '--') + ' · ⚠ 约15分钟延迟';
+    }
+
+    state.futures = state.futures || {};
+    state.futures.gc = price;
+    console.log('[Futures] COMEX GC:', price);
+  } catch(e) { console.warn('[Futures] COMEX 失败:', e.message); }
+}
+
+// ─── 价差计算 ─────────────────────────────────────────────────────────
+function updateSpread() {
+  const spot    = state.au9999;
+  const futures = state.futures && state.futures.au0;
+  if (!spot || !futures) return;
+
+  const diff    = futures - spot;
+  const diffPct = (diff / spot * 100);
+  const cls     = diff >= 0 ? 'pos' : 'neg';
+  const sign    = diff >= 0 ? '+' : '';
+
+  const set = (id, txt, c) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = txt; if (c) el.className = 'spread-val ' + c; }
+  };
+
+  set('sp-spot',    spot.toFixed(2));
+  set('sp-futures', futures.toFixed(2));
+  set('sp-diff',    sign + diff.toFixed(2) + ' 元/克', cls);
+  set('sp-pct',     sign + diffPct.toFixed(3) + '%', cls);
+}
+
 // ─── Main Refresh ─────────────────────────────────────
 async function refreshAll() {
   setRefreshing(true);
@@ -2861,6 +3346,8 @@ async function refreshAll() {
   // 刷新后更新持仓盈亏和手机端银行卡片
   renderPositions();
   renderBankMobileCards();
+  // 期货页已打开时同步刷新期货数据
+  if (futuresLoaded) { loadFuturesData().catch(() => {}); }
 
   // Restart ticker if page is hidden
   if (document.hidden) { stopTitleTicker(); startTitleTicker(); }
@@ -2890,6 +3377,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll(); /* 初始化一次，防止刷新时页面已滚动 */
+
+  /* 初始化期货 view 初始隐藏 */
+  const fv = document.getElementById('view-futures');
+  if (fv) fv.style.display = 'none';
 
   /* 初始化语言 */
   if (currentLang === 'en') {
