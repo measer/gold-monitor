@@ -815,6 +815,165 @@ main {
 }
 .del-position:hover { color: var(--down); }
 
+/* ── 持仓刷新按钮 ── */
+.pos-summary-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.pos-refresh-btn {
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  color: var(--text2);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  display: flex; align-items: center; gap: 5px;
+  letter-spacing: 0.3px;
+  margin-left: auto;
+}
+.pos-refresh-btn:hover {
+  color: var(--gold);
+  border-color: var(--gold-border);
+  background: var(--gold-dim);
+}
+.pos-refresh-btn.spinning {
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+.pos-refresh-icon {
+  display: inline-block;
+}
+.pos-refresh-btn.spinning .pos-refresh-icon {
+  animation: posRefreshSpin 0.7s linear infinite;
+}
+@keyframes posRefreshSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── 自定义日期选择器 ─────────────────────────────────── */
+.audate-wrap {
+  position: relative;
+  width: 100%;
+}
+.audate-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg3);
+  border: 1px solid var(--bg4);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 36px 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.audate-input:hover, .audate-input:focus {
+  border-color: var(--gold-border);
+}
+.audate-input.placeholder { color: var(--text3); }
+.audate-icon {
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold); font-size: 14px; pointer-events: none;
+}
+.audate-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 9998;
+  background: rgba(0,0,0,0.45);
+  animation: audpOverlayIn 0.15s ease forwards;
+}
+.audate-overlay.open { display: block; }
+.audate-overlay.closing { animation: audpOverlayOut 0.15s ease forwards; }
+@keyframes audpOverlayIn  { from{opacity:0} to{opacity:1} }
+@keyframes audpOverlayOut { from{opacity:1} to{opacity:0} }
+
+.audate-panel {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg2);
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius);
+  padding: 14px;
+  min-width: 260px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  animation: audpIn 0.18s cubic-bezier(0.34,1.2,0.64,1) forwards;
+}
+.audate-panel.open { display: block; }
+.audate-panel.closing {
+  animation: audpOut 0.13s ease forwards;
+  pointer-events: none;
+}
+@keyframes audpIn  { from{opacity:0; transform:translateY(-8px) scale(0.97)} to{opacity:1; transform:translateY(0) scale(1)} }
+@keyframes audpOut { from{opacity:1; transform:translateY(0) scale(1)} to{opacity:0; transform:translateY(-6px) scale(0.97)} }
+.audate-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.audate-nav-btn {
+  background: none; border: 1px solid var(--bg4);
+  color: var(--text2); width: 26px; height: 26px;
+  border-radius: 6px; cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.audate-nav-btn:hover { border-color: var(--gold-border); color: var(--gold); }
+.audate-nav-label {
+  font-size: 12px; color: var(--gold); font-weight: 600;
+  cursor: pointer; letter-spacing: 0.5px;
+}
+.audate-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.audate-dow {
+  font-size: 9px; color: var(--text3); text-align: center;
+  padding: 4px 0; letter-spacing: 0.5px;
+}
+.audate-day {
+  font-size: 11px; text-align: center; padding: 6px 2px;
+  border-radius: 6px; cursor: pointer; color: var(--text2);
+  transition: background 0.1s, color 0.1s;
+  border: 1px solid transparent;
+}
+.audate-day:hover { background: var(--bg4); color: var(--text); }
+.audate-day.today {
+  border-color: var(--gold-border); color: var(--gold);
+}
+.audate-day.selected {
+  background: var(--gold); color: #0D0D0D; font-weight: 700;
+  border-color: transparent;
+}
+.audate-day.other-month { color: var(--text3); opacity: 0.4; }
+.audate-day.disabled { pointer-events: none; opacity: 0.2; }
+.audate-footer {
+  display: flex; justify-content: space-between;
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--bg4);
+}
+.audate-footer-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 11px; font-family: inherit;
+  padding: 4px 8px; border-radius: 6px;
+  transition: background 0.15s;
+}
+.audate-footer-btn.clear { color: var(--text3); }
+.audate-footer-btn.clear:hover { background: var(--bg4); color: var(--text); }
+.audate-footer-btn.today-btn { color: var(--gold); }
+.audate-footer-btn.today-btn:hover { background: var(--gold-dim); }
+
+
 /* ─── Alert Panel ─── */
 .alert-panel {
   background: var(--bg2);
@@ -948,15 +1107,15 @@ main {
 /* 页面内容切换动画 */
 .page-view {
   display: none;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.page-view.active {
+.page-view.visible {
   display: block;
-  opacity: 1;
-  transform: translateY(0);
+  animation: pageViewIn 0.2s ease forwards;
+}
+@keyframes pageViewIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ─── 期货板块样式 ─── */
@@ -1150,9 +1309,10 @@ main {
   border-radius: var(--radius);
   z-index: 999;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  white-space: nowrap;
-  max-width: 90vw;
-  text-align: center;
+  white-space: normal;
+  max-width: min(300px, 85vw);
+  word-break: break-word;
+  text-align: left;
 }
 
 .toast.show { transform: translateX(-50%) translateY(0); }
@@ -1290,7 +1450,7 @@ main {
 <main>
 
   <!-- ══ 现货视图 ══ -->
-  <div class="page-view active" id="view-spot">
+  <div class="page-view visible" id="view-spot">
 
   <!-- ① 国际金价 -->
   <div class="section-label" onclick="toggleSection('sec-0')" data-sec="sec-intl">国际金价<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-0">
@@ -1432,33 +1592,44 @@ main {
 <div class="section-label" onclick="toggleSection('sec-7')" data-sec="sec-pos">持仓成本计算器<span class="section-line"></span><span class="section-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span></div><div class="section-body" id="sec-7">
 
   <!-- 汇总统计 -->
-  <div class="position-summary" id="pos-summary" style="display:none;">
-    <div class="position-stat">
-      <div class="position-stat-label" data-i18n="pos-stat-gram">总持仓</div>
-      <div class="position-stat-value" id="pos-total-gram">--</div>
+  <div id="pos-summary-wrap" style="display:none;">
+    <div class="pos-summary-header">
+      <span style="font-size:10px;color:var(--text3);letter-spacing:1px;" data-i18n="pos-alloc-title">持仓配置</span>
+      <button class="pos-refresh-btn" id="pos-refresh-btn" onclick="posManualRefresh()" data-i18n="pos-refresh-btn"><span class="pos-refresh-icon">↻</span><span class="zh-only">刷新价格</span><span class="en-only">Refresh</span></button>
     </div>
-    <div class="position-stat">
-      <div class="position-stat-label" data-i18n="pos-stat-cost">总成本</div>
-      <div class="position-stat-value" id="pos-total-cost">--</div>
-    </div>
-    <div class="position-stat">
-      <div class="position-stat-label" data-i18n="pos-stat-market">当前市值</div>
-      <div class="position-stat-value" id="pos-market-val">--</div>
-    </div>
-    <div class="position-stat">
-      <div class="position-stat-label" data-i18n="pos-stat-pnl">浮动盈亏</div>
-      <div class="position-stat-value neutral" id="pos-pnl">--</div>
-      <div class="position-stat-sub" id="pos-pnl-pct">--</div>
-    </div>
-    <div class="position-stat">
-      <div class="position-stat-label" data-i18n="pos-stat-avg">持仓均价</div>
-      <div class="position-stat-value" id="pos-avg-cost">--</div>
+    <div class="pos-alloc" id="pos-alloc"></div>
+    <div class="position-summary" id="pos-summary">
+      <div class="position-stat">
+        <div class="position-stat-label" data-i18n="pos-stat-gram">总持仓</div>
+        <div class="position-stat-value" id="pos-total-gram">--</div>
+      </div>
+      <div class="position-stat">
+        <div class="position-stat-label" data-i18n="pos-stat-cost">总成本</div>
+        <div class="position-stat-value" id="pos-total-cost">--</div>
+      </div>
+      <div class="position-stat">
+        <div class="position-stat-label" data-i18n="pos-stat-market">当前市值</div>
+        <div class="position-stat-value" id="pos-market-val">--</div>
+      </div>
+      <div class="position-stat">
+        <div class="position-stat-label" data-i18n="pos-stat-pnl">浮动盈亏</div>
+        <div class="position-stat-value neutral" id="pos-pnl">--</div>
+        <div class="position-stat-sub" id="pos-pnl-pct">--</div>
+      </div>
+      <div class="position-stat">
+        <div class="position-stat-label" data-i18n="pos-stat-avg">持仓均价</div>
+        <div class="position-stat-value" id="pos-avg-cost">--</div>
+      </div>
     </div>
   </div>
 
   <!-- 持仓记录列表 -->
   <div class="position-list" id="pos-list">
-    <div class="position-empty" id="pos-empty"><span data-i18n="pos-empty">No positions yet. Add one below to track P&L.</span></div>
+    <div class="position-empty">
+      <span class="pos-empty-icon">📊</span>
+      <span data-i18n="pos-empty">暂无持仓记录</span><br>
+      <span class="pos-empty-hint" data-i18n="pos-empty-hint">↓ 在下方选择品种并填入买入价，即可开始追踪盈亏</span>
+    </div>
   </div>
 
   <!-- 添加表单 -->
@@ -1496,11 +1667,42 @@ main {
     </div>
     <div class="position-input-card">
       <label data-i18n="pos-cost-label">买入均价</label>
-      <input type="number" id="pos-cost" placeholder="e.g. 780.50" step="0.01" min="0">
+      <input type="number" id="pos-cost" placeholder="e.g. 780.50" step="0.01" min="0"
+        oninput="this.value=this.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')">
     </div>
     <div class="position-input-card">
       <label data-i18n="pos-amount-label">持仓数量（克/份）</label>
-      <input type="number" id="pos-amount" placeholder="e.g. 10.5" step="0.01" min="0">
+      <input type="number" id="pos-amount" placeholder="e.g. 10.5" step="0.01" min="0"
+        oninput="this.value=this.value.replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')">
+    </div>
+  </div>
+  <div class="pos-extra-row">
+    <div class="position-input-card">
+      <label data-i18n="pos-date-label">买入日期（可选）</label>
+      <div class="audate-wrap" id="audate-wrap">
+        <button type="button" class="audate-input placeholder" id="audate-display"
+          data-i18n="audate-placeholder" onclick="audpToggle()">选择日期</button>
+        <span class="audate-icon">📅</span>
+        <div class="audate-overlay" id="audate-overlay" onclick="audpClose()"></div>
+        <div class="audate-panel" id="audate-panel">
+          <div class="audate-nav">
+            <button type="button" class="audate-nav-btn" onclick="audpShift(-1)">‹</button>
+            <span class="audate-nav-label" id="audate-nav-label"></span>
+            <button type="button" class="audate-nav-btn" onclick="audpShift(1)">›</button>
+          </div>
+          <div class="audate-grid" id="audate-grid"></div>
+          <div class="audate-footer">
+            <button type="button" class="audate-footer-btn clear" onclick="audpClear()" id="audate-btn-clear" data-i18n="audate-clear">清除</button>
+            <button type="button" class="audate-footer-btn today-btn" onclick="audpSelectToday()" id="audate-btn-today" data-i18n="audate-today">今天</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="position-input-card">
+      <label data-i18n="pos-note-label">备注（可选）</label>
+      <input type="text" id="pos-note" maxlength="20"
+        placeholder="e.g. 定投第3次" data-i18n-placeholder="pos-note-placeholder"
+        style="font-size:12px;">
     </div>
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
@@ -1693,7 +1895,16 @@ const I18N = {
     'pos-add-btn':       '+ 添加持仓',
     'pos-save-note':     '持仓数据保存在本地，刷新不丢失',
     'pos-disclaimer':    '⚠ 盈亏基于当前实时价格估算，不含手续费、税费及买卖点差成本。仅供参考，不构成投资建议。',
-    'pos-empty':         '暂无持仓记录，在下方添加后自动计算盈亏',
+    'pos-empty':         '暂无持仓记录',
+    'pos-empty-hint':    '↓ 在下方选择品种并填入买入价，即可开始追踪盈亏',
+    'pos-alloc-title':   '持仓配置',
+    'pos-refresh-btn':   '↻ 刷新价格',
+    'pos-date-label':    '买入日期（可选）',
+    'audate-clear':      '清除',
+    'audate-today':      '今天',
+    'audate-placeholder':'选择日期',
+    'pos-note-placeholder': 'e.g. DCA #3',
+    'pos-note-label':    '备注（可选）',
     'pos-stat-gram':     '总持仓',
     'pos-stat-cost':     '总成本',
     'pos-stat-market':   '当前市值',
@@ -1846,7 +2057,16 @@ const I18N = {
     'pos-add-btn':       '+ Add Position',
     'pos-save-note':     'Data saved locally, persists on refresh',
     'pos-disclaimer':    '⚠ P&L is estimated based on current market prices, excluding fees, taxes and bid-ask spread. For reference only, not investment advice.',
-    'pos-empty':         'No positions yet. Add one below to track P&L.',
+    'pos-empty':         'No positions yet',
+    'pos-empty-hint':    '↓ Select an asset and enter your buy price to start tracking P&L',
+    'pos-alloc-title':   'Allocation',
+    'pos-refresh-btn':   '↻ Refresh Prices',
+    'pos-date-label':    'Buy Date (optional)',
+    'audate-clear':      'Clear',
+    'audate-today':      'Today',
+    'audate-placeholder':'Select date',
+    'pos-note-placeholder': 'e.g. DCA #3',
+    'pos-note-label':    'Note (optional)',
     'pos-stat-gram':     'Total Holdings',
     'pos-stat-cost':     'Total Cost',
     'pos-stat-market':   'Market Value',
@@ -2287,6 +2507,13 @@ function applyLang() {
   renderAllModules();
 
   /* 3. data-i18n 通用扫描（renderAllModules 之后，覆盖新生成 DOM）*/
+  // placeholder 双语处理
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key);
+    if (val) el.placeholder = val;
+  });
+
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const k = el.getAttribute('data-i18n');
     const val = tr[k];
@@ -2496,6 +2723,8 @@ let toastTimer = null;
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
+  // 短文字居中，长文字（会换行）左对齐，阅读更自然
+  el.style.textAlign = msg.length > 24 ? 'left' : 'center';
   el.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
@@ -2612,7 +2841,7 @@ async function fetchInternational() {
     console.error('International fetch error:', e);
     if (e.message && e.message.includes('CNY rate')) {
       const el = document.getElementById('price-cny');
-      if (el) { el.textContent = '汇率暂不可用'; el.classList.add('loading'); }
+      if (el) { el.textContent = currentLang === 'zh' ? '汇率暂不可用' : 'Rate unavailable'; el.classList.add('loading'); }
       showToast(t('toast-cny-fail'));
     } else {
       showToast(t('toast-intl-fail'));
@@ -2754,7 +2983,7 @@ async function fetchDomestic() {
   if (isEstimate) {
     const isJDDerived = srcName && srcName.includes('反推');
     if (badge) {
-      badge.textContent = isJDDerived ? '≈ 京东反推' : '≈ 估算价';
+      badge.textContent = isJDDerived ? (currentLang === 'zh' ? '≈ 京东反推' : '≈ JD derived') : (currentLang === 'zh' ? '≈ 估算价' : '≈ Est.');
       badge.style.cssText = isJDDerived
         ? 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(76,175,122,0.1);color:var(--up);border:1px solid rgba(76,175,122,0.3);'
         : 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid var(--gold-border);';
@@ -2769,12 +2998,12 @@ async function fetchDomestic() {
       (tot >= 9*60 && tot <= 15*60+30) || tot >= 20*60 || tot <= 2*60+30
     );
     if (badge) {
-      badge.textContent = inTrading ? '● 交易中' : '○ 休市';
+      badge.textContent = inTrading ? (currentLang === 'zh' ? '● 交易中' : '● Open') : (currentLang === 'zh' ? '○ 休市' : '○ Closed');
       badge.style.cssText = inTrading
         ? 'font-size:10px;padding:3px 10px;border-radius:20px;background:rgba(76,175,122,0.12);color:var(--up);border:1px solid rgba(76,175,122,0.3);'
         : 'font-size:10px;padding:3px 10px;border-radius:20px;background:var(--bg4);color:var(--text3);border:1px solid var(--bg4);';
     }
-    if (note) note.textContent = inTrading ? '' : `⚠ 当前为非交易时段，显示最近收盘价 ${price.toFixed(2)} 元/克，价格暂不变动，下一交易时段开市后恢复实时更新。`;
+    if (note) note.textContent = inTrading ? '' : (currentLang === 'zh' ? `⚠ 当前为非交易时段，显示最近收盘价 ${price.toFixed(2)} 元/克，价格暂不变动，下一交易时段开市后恢复实时更新。` : `⚠ Outside trading hours. Last close: ${price.toFixed(2)} CNY/g. Resumes next session.`);
   }
 }
 
@@ -2813,7 +3042,9 @@ function updateBankPrices(base) {
   if (czbEl)  czbEl.textContent  = (base * 1.004).toFixed(2);
 
   // Indicate data source in formula
-  const srcLabel = state.au9999 ? 'AU9999 现货价（腾讯证券实时）' : 'AU9999 估算价（国际金价换算）';
+  const srcLabel = currentLang === 'zh'
+    ? (state.au9999 ? 'AU9999 现货价（腾讯证券实时）' : 'AU9999 估算价（国际金价换算）')
+    : (state.au9999 ? 'AU9999 spot (Tencent Finance)' : 'AU9999 est. (derived from intl price)');
   const spreadEl = document.getElementById('bank-formula-spread');
   if (spreadEl) spreadEl.title = srcLabel;
 
@@ -2842,7 +3073,7 @@ function updateBankPrices(base) {
   const suffix = state.au9999 ? '' : ' *';
   Object.keys(banks).forEach(k => {
     const el = document.getElementById('bank-' + k + '-price');
-    if (el && suffix) el.title = '基于国际金价估算，非实时上海金数据';
+    if (el && suffix) el.title = currentLang === 'zh' ? '基于国际金价估算，非实时上海金数据' : 'Estimated from intl price, not live SHGE data';
   });
 }
 
@@ -2893,7 +3124,7 @@ async function fetchJDGold() {
     const el = document.getElementById('bank-czb-price');
     if (el) {
       el.textContent = '¥' + czbPrice.toFixed(2);
-      el.title = '京东金融实时报价（非估算）';
+      el.title = currentLang === 'zh' ? '京东金融实时报价（非估算）' : 'JD Finance live quote (not estimated)';
       el.style.color = 'var(--up)';
     }
     renderBankMobileCards();
@@ -2909,11 +3140,13 @@ async function fetchJDGold() {
 
   // 更新底部来源栏
   const parts = [];
-  if (minshengPrice) parts.push('民生积存金');
-  if (czbPrice)      parts.push('浙商积存金');
-  const base = state.sources.domestic || '腾讯证券 qt.gtimg.cn';
+  if (minshengPrice) parts.push(currentLang === 'zh' ? '民生积存金' : 'CMBC Gold');
+  if (czbPrice)      parts.push(currentLang === 'zh' ? '浙商积存金' : 'CZBank Gold');
+  const base = state.sources.domestic || (currentLang === 'zh' ? '腾讯证券 qt.gtimg.cn' : 'Tencent Finance');
   if (!base.includes('京东')) {
-    state.sources.domestic = base + `（+京东实时：${parts.join('·')}）`;
+    state.sources.domestic = currentLang === 'zh'
+      ? base + `（+京东实时：${parts.join('·')}）`
+      : base + ` (+JD Finance: ${parts.join(', ')})`;
     updateSourceBar();
   }
 }
@@ -2945,7 +3178,7 @@ async function fetchETFs() {
       if (isNaN(price) || price === 0) return;
       setETF(etfList[i].code, price, change || 0, changeP || 0);
     });
-    state.sources.etf = '腾讯证券 qt.gtimg.cn';
+    state.sources.etf = currentLang === 'zh' ? '腾讯证券 qt.gtimg.cn' : 'Tencent Finance';
     tencentOk = true;
     updateSourceBar();
   } catch(e) {
@@ -2974,8 +3207,8 @@ async function fetchETFs() {
       }
     });
     state.sources.etf = emCount > 0
-      ? '东方财富 JSONP（' + emCount + '/' + etfList.length + '）'
-      : '获取失败';
+      ? (currentLang === 'zh' ? '东方财富 JSONP（' + emCount + '/' + etfList.length + '）' : 'EM Finance (' + emCount + '/' + etfList.length + ')')
+      : (currentLang === 'zh' ? '获取失败' : 'Failed');
     updateSourceBar();
   }
 }
@@ -3035,7 +3268,7 @@ function switchChart(mode, btn) {
   } else {
     if (futuresNote) futuresNote.style.display = 'none';
     const srcEl = document.getElementById('chart-datasrc');
-    if (srcEl) srcEl.textContent = '本次会话数据 · 刷新后重置';
+    if (srcEl) srcEl.textContent = currentLang === 'zh' ? '本次会话数据 · 刷新后重置' : 'Session data · resets on refresh';
     updateChart();
   }
 }
@@ -3057,7 +3290,7 @@ function renderAlerts() {
     return;
   }
   list.innerHTML = alerts.map((a, i) => {
-    const dirLabel = a.dir === 'above' ? '涨过' : '跌破';
+    const dirLabel = a.dir === 'above' ? (currentLang === 'zh' ? '涨过' : 'above') : (currentLang === 'zh' ? '跌破' : 'below');
     const typeLabels = {
       usd_oz: 'USD/oz', cny_oz: 'CNY/oz',
       au9999: 'AU9999/克', etf_518880: 'ETF 518880'
@@ -3130,7 +3363,7 @@ function triggerAlert(a, current) {
     stopTitleTicker();
     let c = 0;
     titleTickerTimer = setInterval(() => {
-      document.title = c % 2 === 0 ? '🔔 价格预警！' : originalTitle;
+      document.title = c % 2 === 0 ? (currentLang === 'zh' ? '🔔 价格预警！' : '🔔 Price Alert!') : originalTitle;
       c++;
     }, 800);
   }
@@ -3204,7 +3437,7 @@ function renderPosDropdownList(filter) {
     : POS_OPTIONS;
 
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="pos-dropdown-empty">没有匹配的品种</div>';
+    list.innerHTML = `<div class="pos-dropdown-empty">${currentLang === 'zh' ? '没有匹配的品种' : 'No matching assets'}</div>`;
     return;
   }
 
@@ -3257,6 +3490,11 @@ document.addEventListener('click', e => {
 // ─── P1 持仓成本计算器 ────────────────────────────────────────────────
 let positions = JSON.parse(localStorage.getItem('goldPositions') || '[]');
 
+// 迁移旧数据结构（确保每笔都有 note/buyDate 字段）
+positions = positions.map(p => ({
+  note: '', buyDate: '', ...p
+}));
+
 // 品种 → 当前价格映射
 function getPositionPrice(type) {
   switch (type) {
@@ -3270,7 +3508,6 @@ function getPositionPrice(type) {
     case 'etf_518850':  return state.etfs['518850'];
     case 'etf_518680':  return state.etfs['518680'];
     case 'etf_159830':  return state.etfs['159830'];
-    // 银行积存金：取 AU9999 + 各行点差（与 updateBankPrices 一致）
     case 'bank_icbc':   return state.au9999 ? state.au9999 + 3   : null;
     case 'bank_ccb':    return state.au9999 ? state.au9999 + 3   : null;
     case 'bank_abc':    return state.au9999 ? state.au9999 + 2.5 : null;
@@ -3278,88 +3515,509 @@ function getPositionPrice(type) {
     case 'bank_bocom':  return state.au9999 ? state.au9999 + 3   : null;
     case 'bank_psbc':   return state.au9999 ? state.au9999 + 3   : null;
     case 'bank_cmb':    return state.au9999 ? state.au9999 + 5   : null;
-    case 'bank_czb':    return state.au9999 ? state.au9999 * 1.004 : null; // 浙商按比例点差 0.4%，非固定值
+    case 'bank_czb':    return state.au9999 ? state.au9999 * 1.004 : null; // 浙商按比例点差 0.4%
     default:            return null;
   }
 }
 
 // POS_TYPE_LABEL replaced by getPosLabel(val)
 
-function addPosition() {
-  const type   = document.getElementById('pos-type').value;
-  const cost   = parseFloat(document.getElementById('pos-cost').value);
-  const amount = parseFloat(document.getElementById('pos-amount').value);
-  if (!cost || isNaN(cost) || cost <= 0)   { showToast(t('toast-invalid-price')); return; }
-  if (!amount || isNaN(amount) || amount <= 0) { showToast(t('toast-invalid-qty')); return; }
-  positions.push({ type, cost, amount, addedAt: Date.now() });
+// 品种大类
+function getPosGroup(type) {
+  if (type === 'au9999') return 'spot';
+  if (/^(usd|cny|cny_gram)$/.test(type)) return 'intl';
+  if (/^etf_/.test(type)) return 'etf';
+  if (/^bank_/.test(type)) return 'bank';
+  return 'other';
+}
+const GROUP_META = {
+  spot:  { label: '国内现货', labelEn: 'CN Spot',    color: '#C9A84C' },
+  intl:  { label: '国际现货', labelEn: 'Intl Spot',  color: '#D4B86A' },
+  etf:   { label: '黄金ETF',  labelEn: 'Gold ETF',   color: '#7CB9E8' },
+  bank:  { label: '银行积存', labelEn: 'Bank Savings',color: '#98D8B0' },
+  other: { label: '其他',     labelEn: 'Other',       color: '#888'    },
+};
+
+// 持仓单位
+function getPosUnit(type) {
+  if (/^etf_/.test(type)) return '份';
+  if (/^(usd|cny)$/.test(type)) return 'oz';
+  return '克';
+}
+
+// 持有天数
+function holdingDays(buyDate) {
+  if (!buyDate) return null;
+  const ms = Date.now() - new Date(buyDate).getTime();
+  const d = Math.floor(ms / 86400000);
+  return d >= 0 ? d : null;
+}
+
+function savePositions() {
   localStorage.setItem('goldPositions', JSON.stringify(positions));
+}
+
+
+// ── 自定义日期选择器 AuDatePicker ─────────────────────────────────────
+const _audp = {
+  year: null, month: null,   // 当前视图年月
+  selected: null,            // 已选日期 {y,m,d}
+};
+
+function _audpFmt(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// 统一关闭入口：带退出动画
+function audpClose() {
+  const panel   = document.getElementById('audate-panel');
+  const overlay = document.getElementById('audate-overlay');
+  if (!panel || !panel.classList.contains('open')) return;
+
+  panel.classList.add('closing');
+  if (overlay) overlay.classList.add('closing');
+
+  setTimeout(() => {
+    panel.classList.remove('open', 'closing');
+    if (overlay) overlay.classList.remove('open', 'closing');
+  }, 130);
+}
+
+function audpToggle() {
+  const panel   = document.getElementById('audate-panel');
+  const overlay = document.getElementById('audate-overlay');
+  const btn     = document.getElementById('audate-display');
+  if (!panel || !btn) return;
+
+  if (panel.classList.contains('open')) {
+    audpClose();
+    return;
+  }
+
+  // 初始化视图
+  const now = new Date();
+  _audp.year  = _audp.selected ? _audp.selected.y : now.getFullYear();
+  _audp.month = _audp.selected ? _audp.selected.m : now.getMonth() + 1;
+  _audpRender();
+
+  // fixed 定位：锚点为输入框
+  const rect   = btn.getBoundingClientRect();
+  const panelW = 292;
+  let left = rect.left;
+  let top  = rect.bottom + 4;
+
+  // 防右溢出
+  if (left + panelW > window.innerWidth - 8) {
+    left = window.innerWidth - panelW - 8;
+  }
+  // 先展示在下方以便测量真实高度，再判断是否需要翻转
+  panel.style.left      = Math.max(8, left) + 'px';
+  panel.style.top       = top + 'px';
+  panel.style.visibility = 'hidden';
+  panel.classList.add('open');
+  const panelH = panel.offsetHeight;
+  panel.classList.remove('open');
+  panel.style.visibility = '';
+
+  // 底部空间不足 → 向上弹出，紧贴按钮顶部
+  if (top + panelH > window.innerHeight - 8) {
+    top = rect.top - panelH - 4;
+  }
+  left = Math.max(8, left);
+  top  = Math.max(8, top);
+
+  panel.style.left = left + 'px';
+  panel.style.top  = top  + 'px';
+  panel.classList.add('open');
+  if (overlay) overlay.classList.add('open');
+
+  // ESC 关闭
+  const onKey = (e) => {
+    if (e.key === 'Escape') { audpClose(); document.removeEventListener('keydown', onKey); }
+  };
+  document.addEventListener('keydown', onKey);
+
+  // 滚动关闭（页面滚动时立即关闭，避免"悬浮孤岛"）
+  const onScroll = () => { audpClose(); window.removeEventListener('scroll', onScroll, true); };
+  window.addEventListener('scroll', onScroll, { once: true, capture: true, passive: true });
+}
+
+function audpShift(delta) {
+  _audp.month += delta;
+  if (_audp.month > 12) { _audp.month = 1;  _audp.year++; }
+  if (_audp.month < 1)  { _audp.month = 12; _audp.year--; }
+  _audpRender();
+}
+
+function _audpRender() {
+  const label = document.getElementById('audate-nav-label');
+  const grid  = document.getElementById('audate-grid');
+  if (!label || !grid) return;
+
+  const monthStr = currentLang === 'zh'
+    ? `${_audp.year}年${_audp.month}月`
+    : `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][_audp.month-1]} ${_audp.year}`;
+  label.textContent = monthStr;
+
+  const now   = new Date();
+  const today = { y: now.getFullYear(), m: now.getMonth()+1, d: now.getDate() };
+
+  // 星期标题
+  const dows = currentLang === 'zh'
+    ? ['日','一','二','三','四','五','六']
+    : ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  let html = dows.map(d => `<div class="audate-dow">${d}</div>`).join('');
+
+  // 当月第一天是星期几
+  const firstDay = new Date(_audp.year, _audp.month - 1, 1).getDay();
+  const daysInMonth = new Date(_audp.year, _audp.month, 0).getDate();
+  const daysInPrev  = new Date(_audp.year, _audp.month - 1, 0).getDate();
+
+  // 上月补位
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    html += `<div class="audate-day other-month" onclick="audpSelect(${_audp.year},${_audp.month-1||12},${d})">${d}</div>`;
+  }
+
+  // 当月日期
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isSel = _audp.selected &&
+      _audp.selected.y === _audp.year &&
+      _audp.selected.m === _audp.month &&
+      _audp.selected.d === d;
+    const isToday = today.y === _audp.year && today.m === _audp.month && today.d === d;
+    // 禁止选未来日期
+    const dt = new Date(_audp.year, _audp.month-1, d);
+    const isDisabled = dt > new Date(today.y, today.m-1, today.d);
+    const cls = ['audate-day',
+      isSel ? 'selected' : '',
+      isToday && !isSel ? 'today' : '',
+      isDisabled ? 'disabled' : '',
+    ].filter(Boolean).join(' ');
+    html += `<div class="${cls}" onclick="audpSelect(${_audp.year},${_audp.month},${d})">${d}</div>`;
+  }
+
+  // 下月补位（凑满6行42格）
+  const total = firstDay + daysInMonth;
+  const nextDays = total <= 35 ? 35 - total : 42 - total;
+  for (let d = 1; d <= nextDays; d++) {
+    html += `<div class="audate-day other-month" onclick="audpSelect(${_audp.year},${_audp.month+1>12?1:_audp.month+1},${d})">${d}</div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function audpSelect(y, m, d) {
+  // 处理跨月边界
+  const dt = new Date(y, m-1, d);
+  _audp.selected = { y: dt.getFullYear(), m: dt.getMonth()+1, d: dt.getDate() };
+  _audpUpdateDisplay();
+  audpClose();
+}
+
+function audpSelectToday() {
+  const now = new Date();
+  audpSelect(now.getFullYear(), now.getMonth()+1, now.getDate());
+}
+
+function audpClear() {
+  _audp.selected = null;
+  _audpUpdateDisplay();
+  audpClose();
+}
+
+function _audpUpdateDisplay() {
+  const btn = document.getElementById('audate-display');
+  if (!btn) return;
+  if (_audp.selected) {
+    const { y, m, d } = _audp.selected;
+    btn.textContent = _audpFmt(y, m, d);
+    btn.classList.remove('placeholder');
+  } else {
+    btn.textContent = t('audate-placeholder');
+    btn.classList.add('placeholder');
+  }
+}
+
+// 供 addPosition 读取选中值（兼容旧的 pos-date value 读法）
+function audpGetValue() {
+  if (!_audp.selected) return '';
+  const { y, m, d } = _audp.selected;
+  return _audpFmt(y, m, d);
+}
+
+// 供 addPosition 重置
+function audpReset() {
+  _audp.selected = null;
+  _audpUpdateDisplay();
+}
+
+function addPosition() {
+  const type    = document.getElementById('pos-type').value;
+  const costRaw = document.getElementById('pos-cost').value.trim();
+  const amtRaw  = document.getElementById('pos-amount').value.trim();
+  const note    = (document.getElementById('pos-note')?.value || '').trim().slice(0, 20);
+  const buyDate = audpGetValue();
+
+  const cost   = parseFloat(costRaw);
+  const amount = parseFloat(amtRaw);
+  if (!costRaw || isNaN(cost) || cost <= 0)    { showToast(t('toast-invalid-price')); return; }
+  if (!amtRaw  || isNaN(amount) || amount <= 0) { showToast(t('toast-invalid-qty'));   return; }
+
+  positions.push({ type, cost, amount, note, buyDate, addedAt: Date.now() });
+  savePositions();
+
   document.getElementById('pos-cost').value   = '';
   document.getElementById('pos-amount').value = '';
+  if (document.getElementById('pos-note'))  document.getElementById('pos-note').value  = '';
+  audpReset();
+  // 保留上次选中的品种，方便连续添加同品种
+
   renderPositions();
   showToast(t('toast-pos-added'));
 }
 
-function removePosition(i) {
-  positions.splice(i, 1);
-  localStorage.setItem('goldPositions', JSON.stringify(positions));
+// 删除确认弹层
+function confirmRemovePosition(idx) {
+  const existing = document.getElementById('pos-confirm-overlay');
+  if (existing) existing.remove();
+
+  const p = positions[idx];
+  const label = getPosLabel(p.type);
+  const overlay = document.createElement('div');
+  overlay.className = 'pos-confirm-overlay';
+  overlay.id = 'pos-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="pos-confirm-box">
+      <p>确认删除这笔持仓？<br><strong style="color:var(--gold)">${label} · ${p.amount}${getPosUnit(p.type)} · 均价${p.cost.toFixed(2)}</strong></p>
+      <div class="pos-confirm-btns">
+        <button class="pos-confirm-cancel" onclick="document.getElementById('pos-confirm-overlay').remove()">取消</button>
+        <button class="pos-confirm-ok" onclick="doRemovePosition(${idx})">确认删除</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function doRemovePosition(idx) {
+  document.getElementById('pos-confirm-overlay')?.remove();
+  positions.splice(idx, 1);
+  savePositions();
+  renderPositions();
+}
+
+// 分组折叠状态
+const groupCollapsed = {};
+
+function toggleGroup(gid) {
+  groupCollapsed[gid] = !groupCollapsed[gid];
+  renderPositions();
+}
+
+// 明细展开状态（key = groupId，值 = 是否展开）
+const detailExpanded = {};
+
+function toggleDetail(gid) {
+  detailExpanded[gid] = !detailExpanded[gid];
   renderPositions();
 }
 
 function renderPositions() {
   const list    = document.getElementById('pos-list');
-  const empty   = document.getElementById('pos-empty');
-  const summary = document.getElementById('pos-summary');
+  const wrap    = document.getElementById('pos-summary-wrap');
   if (!list) return;
 
+  // ── 空状态 ──────────────────────────────────────────────────
   if (positions.length === 0) {
-    list.innerHTML = '<div class="position-empty" id="pos-empty"><span data-i18n="pos-empty">No positions yet. Add one below to track P&L.</span></div>';
-    if (summary) summary.style.display = 'none';
+    list.innerHTML = `<div class="position-empty">
+      <span class="pos-empty-icon">📊</span>
+      <span>${t('pos-empty')}</span><br>
+      <span class="pos-empty-hint">${t('pos-empty-hint')}</span>
+    </div>`;
+    if (wrap) wrap.style.display = 'none';
     return;
   }
+  if (wrap) wrap.style.display = 'block';
 
-  if (summary) summary.style.display = 'flex';
-
-  let totalCost = 0, totalMarket = 0, totalGram = 0, totalAu9999Cost = 0, missingPriceCount = 0;
-  const rows = positions.map((p, i) => {
-    const currentPrice = getPositionPrice(p.type);
-    const costTotal    = p.cost * p.amount;
-    const marketVal    = currentPrice ? currentPrice * p.amount : null;
-    const pnl          = marketVal != null ? marketVal - costTotal : null;
-    const pnlPct       = pnl != null ? (pnl / costTotal * 100) : null;
-    const pnlClass     = pnl == null ? '' : pnl >= 0 ? 'profit' : 'loss';
-    const pnlStr       = pnl == null ? '价格获取中'
-      : (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + ' (' + (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%)';
-
-    totalCost   += costTotal;
-    if (marketVal != null) totalMarket += marketVal;
-    else missingPriceCount++;
-    // 仅 AU9999 品种计入克数汇总和均价计算
-    if (p.type === 'au9999') { totalGram += p.amount; totalAu9999Cost += costTotal; }
-
-    return `<div class="position-item">
-      <span class="position-item-label">${getPosLabel(p.type)}</span>
-      <span class="position-item-val">${p.amount} ${/^etf_/.test(p.type) ? "份" : /^(usd|cny)$/.test(p.type) ? "oz" : "克"}</span>
-      <span class="position-item-val">均价 ${p.cost.toFixed(2)}</span>
-      <span class="position-item-pnl ${pnlClass}">${pnlStr}</span>
-      <button class="del-position" onclick="removePosition(${i})" title="删除">×</button>
-    </div>`;
+  // ── 按大类分组 ──────────────────────────────────────────────
+  const groups = {};
+  positions.forEach((p, i) => {
+    const g = getPosGroup(p.type);
+    if (!groups[g]) groups[g] = [];
+    groups[g].push({ ...p, _idx: i });
   });
 
-  list.innerHTML = rows.join('');
+  // ── 全局汇总变量 ────────────────────────────────────────────
+  let totalCost = 0, totalMarket = 0, totalGram = 0;
+  let totalAu9999Cost = 0, missingPriceCount = 0;
+  const groupCosts = {}; // 用于占比计算
 
-  // 汇总
+  // ── 先算全局数据 ────────────────────────────────────────────
+  positions.forEach(p => {
+    const cp = getPositionPrice(p.type);
+    const ct = p.cost * p.amount;
+    const mv = cp ? cp * p.amount : null;
+    totalCost += ct;
+    if (mv != null) totalMarket += mv; else missingPriceCount++;
+    if (p.type === 'au9999') { totalGram += p.amount; totalAu9999Cost += ct; }
+    const g = getPosGroup(p.type);
+    groupCosts[g] = (groupCosts[g] || 0) + ct;
+  });
+
+  // ── 渲染分组列表 ────────────────────────────────────────────
+  let html = '';
+  const groupOrder = ['spot', 'intl', 'etf', 'bank', 'other'];
+
+  groupOrder.forEach(gid => {
+    if (!groups[gid]) return;
+    const meta  = GROUP_META[gid];
+    const items = groups[gid];
+    const collapsed = !!groupCollapsed[gid];
+
+    // 分组统计
+    let gCost = 0, gMarket = 0, gMissing = 0;
+    items.forEach(p => {
+      const cp = getPositionPrice(p.type);
+      const ct = p.cost * p.amount;
+      const mv = cp ? cp * p.amount : null;
+      gCost += ct;
+      if (mv != null) gMarket += mv; else gMissing++;
+    });
+    const gPnl = gMarket - gCost;
+    const gPnlPct = gCost > 0 ? (gPnl / gCost * 100) : 0;
+    const gPnlClass = gMissing > 0 ? '' : gPnl >= 0 ? 'profit' : 'loss';
+    const gPnlStr = gMissing > 0 ? '获取中'
+      : (gPnl >= 0 ? '+' : '') + '¥' + gPnl.toFixed(2)
+        + ' (' + (gPnlPct >= 0 ? '+' : '') + gPnlPct.toFixed(2) + '%)';
+
+    // 同品种合并
+    const merged = {};
+    items.forEach(p => {
+      if (!merged[p.type]) merged[p.type] = { type: p.type, totalCost: 0, totalAmount: 0, entries: [] };
+      merged[p.type].totalCost   += p.cost * p.amount;
+      merged[p.type].totalAmount += p.amount;
+      merged[p.type].entries.push(p);
+    });
+
+    html += `<div class="pos-group">
+      <div class="pos-group-header" onclick="toggleGroup('${gid}')">
+        <span>${meta.label}<span class="pos-group-badge">${items.length}</span></span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span class="pos-group-pnl ${gPnlClass}">${gPnlStr}</span>
+          <span class="pos-group-toggle ${collapsed ? '' : 'open'}">▾</span>
+        </span>
+      </div>
+      <div class="pos-group-items ${collapsed ? 'collapsed' : ''}">`;
+
+    Object.values(merged).forEach(m => {
+      const avgCost    = m.totalCost / m.totalAmount;
+      const currentPrice = getPositionPrice(m.type);
+      const marketVal  = currentPrice ? currentPrice * m.totalAmount : null;
+      const pnl        = marketVal != null ? marketVal - m.totalCost : null;
+      const pnlPct     = pnl != null ? (pnl / m.totalCost * 100) : null;
+      const pnlClass   = pnl == null ? '' : pnl >= 0 ? 'profit' : 'loss';
+      const pnlStr     = pnl == null ? '价格获取中'
+        : (pnl >= 0 ? '+' : '') + pnl.toFixed(2)
+          + ' (' + (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%)';
+      const unit = getPosUnit(m.type);
+      const isMulti = m.entries.length > 1;
+      const detailOpen = !!detailExpanded[gid + '_' + m.type];
+
+      // 盈亏平衡提示
+      let breakevenHtml = '';
+      if (pnl != null && currentPrice) {
+        const gap = Math.abs(avgCost - currentPrice);
+        if (pnl < 0) {
+          breakevenHtml = `<div class="pos-breakeven loss">还差 ¥${gap.toFixed(2)} 回本</div>`;
+        } else {
+          breakevenHtml = `<div class="pos-breakeven profit">已超买入价 ¥${gap.toFixed(2)}</div>`;
+        }
+      }
+
+      // 单笔时的日期/备注信息（多笔时在明细行展示，此处不显示）
+      let subInfoHtml = '';
+      if (!isMulti) {
+        const p0 = m.entries[0];
+        const days0 = holdingDays(p0.buyDate);
+        const subParts0 = [
+          p0.buyDate || '',
+          days0 != null ? `持有${days0}天` : '',
+          p0.note ? `📝 ${p0.note}` : '',
+        ].filter(Boolean);
+        if (subParts0.length) {
+          subInfoHtml = `<div class="pos-item-sub">${subParts0.join(' · ')}</div>`;
+        }
+      }
+
+      // 主合并行
+      html += `<div class="position-item${isMulti ? ' merged' : ''}"
+        ${isMulti ? `onclick="toggleDetail('${gid}_${m.type}')"` : ''}>
+        <div>
+          <div class="pos-item-name">${getPosLabel(m.type)}${isMulti ? ` <span style="color:var(--text3);font-size:9px;">▸ ${m.entries.length}笔</span>` : ''}</div>
+          ${breakevenHtml}${subInfoHtml}
+        </div>
+        <span class="position-item-val" style="text-align:right">${m.totalAmount % 1 === 0 ? m.totalAmount : m.totalAmount.toFixed(2)} ${unit}</span>
+        <span class="position-item-val" style="text-align:right">均价 ${avgCost.toFixed(2)}</span>
+        <span class="position-item-pnl ${pnlClass}">${pnlStr}</span>
+        ${isMulti
+          ? `<span style="color:var(--text3);font-size:12px;cursor:pointer;text-align:center">${detailOpen ? '▴' : '▾'}</span>`
+          : `<button class="del-position" onclick="event.stopPropagation();confirmRemovePosition(${m.entries[0]._idx})" title="删除">×</button>`}
+      </div>`;
+
+      // 多笔展开明细
+      if (isMulti) {
+        html += `<div class="pos-detail-list ${detailOpen ? '' : 'collapsed'}">`;
+        m.entries.forEach(p => {
+          const cp2  = getPositionPrice(p.type);
+          const mv2  = cp2 ? cp2 * p.amount : null;
+          const pnl2 = mv2 != null ? mv2 - p.cost * p.amount : null;
+          const pct2 = pnl2 != null ? (pnl2 / (p.cost * p.amount) * 100) : null;
+          const pc2  = pnl2 == null ? '' : pnl2 >= 0 ? 'profit' : 'loss';
+          const ps2  = pnl2 == null ? '--'
+            : (pnl2 >= 0 ? '+' : '') + pnl2.toFixed(2)
+              + ' (' + (pct2 >= 0 ? '+' : '') + pct2.toFixed(2) + '%)';
+          const days = holdingDays(p.buyDate);
+          const meta2 = [
+            p.buyDate ? p.buyDate : '',
+            days != null ? `持有${days}天` : '',
+            p.note ? `📝 ${p.note}` : '',
+          ].filter(Boolean).join(' · ');
+          html += `<div class="pos-detail-item">
+            <div>
+              <div>${p.amount}${unit} · 均价${p.cost.toFixed(2)}</div>
+              ${meta2 ? `<div class="pos-detail-note">${meta2}</div>` : ''}
+            </div>
+            <span></span>
+            <span></span>
+            <span class="position-item-pnl ${pc2}" style="font-size:10px">${ps2}</span>
+            <button class="del-position" onclick="confirmRemovePosition(${p._idx})" title="删除">×</button>
+          </div>`;
+        });
+        html += `</div>`;
+      } else {
+        // 单笔：日期/备注直接在构建主行时已通过 subInfoHtml 注入，此处无需额外处理
+      }
+
+      html += '';
+    });
+
+    html += `</div></div>`; // pos-group-items / pos-group
+  });
+
+  list.innerHTML = html;
+
+  // ── 汇总区 ──────────────────────────────────────────────────
   const hasAllPrices = missingPriceCount === 0;
   const totalPnl    = totalMarket - totalCost;
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost * 100) : 0;
   const pnlClass    = hasAllPrices ? (totalPnl >= 0 ? 'profit' : 'loss') : 'neutral';
 
   const se = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  const sc = (id, cls) => { const el = document.getElementById(id); if (el) { el.className = 'position-stat-value ' + cls; } };
+  const sc = (id, cls) => { const el = document.getElementById(id); if (el) el.className = 'position-stat-value ' + cls; };
 
   if (totalGram > 0) se('pos-total-gram', totalGram.toFixed(2) + ' 克');
   else               se('pos-total-gram', positions.length + ' 笔');
-  se('pos-total-cost',   '¥' + totalCost.toFixed(2));
-  se('pos-market-val',   totalMarket > 0
+  se('pos-total-cost', '¥' + totalCost.toFixed(2));
+  se('pos-market-val', totalMarket > 0
     ? '¥' + totalMarket.toFixed(2) + (hasAllPrices ? '' : ' (部分)')
     : '价格获取中');
   if (hasAllPrices) {
@@ -3369,10 +4027,30 @@ function renderPositions() {
     se('pos-pnl',     '数据不完整');
     se('pos-pnl-pct', missingPriceCount + ' 笔价格未就绪');
   }
-  se('pos-avg-cost',     totalGram > 0
+  se('pos-avg-cost', totalGram > 0
     ? '¥' + (totalAu9999Cost / totalGram).toFixed(2) + '/克'
     : (positions.length > 0 ? '仅限AU9999' : '--'));
   sc('pos-pnl', pnlClass);
+
+  // ── 占比条 ──────────────────────────────────────────────────
+  const allocEl = document.getElementById('pos-alloc');
+  if (allocEl && totalCost > 0) {
+    const allocColors = { spot:'#C9A84C', intl:'#D4B86A', etf:'#7CB9E8', bank:'#98D8B0', other:'#888' };
+    allocEl.innerHTML = Object.entries(groupCosts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([gid, cost]) => {
+        const pct = (cost / totalCost * 100).toFixed(1);
+        const meta = GROUP_META[gid] || GROUP_META.other;
+        const col  = allocColors[gid] || '#888';
+        return `<div class="pos-alloc-item">
+          <div class="pos-alloc-bar" style="width:${Math.max(pct,4)}px;background:${col}"></div>
+          <div class="pos-alloc-label">
+            <span class="pos-alloc-dot" style="background:${col}"></span>
+            <span>${meta.label} ${pct}%</span>
+          </div>
+        </div>`;
+      }).join('');
+  }
 }
 
 // ─── P2a 历史走势图（Yahoo Finance GC=F 免费接口）──────────────────────
@@ -3428,13 +4106,13 @@ async function fetchHistoricalChart(mode) {
 function renderHistChart(data, sourceLabel) {
   if (!chart) return;
   const srcEl = document.getElementById('chart-datasrc');
-  if (srcEl) srcEl.textContent = sourceLabel + ' · 仅供参考，非实时现货价';
+  if (srcEl) srcEl.textContent = sourceLabel + (currentLang === 'zh' ? ' · 仅供参考，非实时现货价' : ' · For ref. only, not live spot');
 
   chart.data.labels = data.map(d =>
     d.t.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
   );
   chart.data.datasets[0].data  = data.map(d => d.v);
-  chart.data.datasets[0].label = 'USD/oz（期货）';
+  chart.data.datasets[0].label = currentLang === 'zh' ? 'USD/oz（期货）' : 'USD/oz (futures)';
   chart.update('none');
 }
 
@@ -3497,7 +4175,6 @@ function renderBankMobileCards() {
 let futuresLoaded = false;  // 期货数据只在首次切换时主动加载
 
 function switchPageTab(tab) {
-  // 更新 Tab 按钮状态
   document.getElementById('tab-spot').classList.toggle('active', tab === 'spot');
   document.getElementById('tab-futures').classList.toggle('active', tab === 'futures');
 
@@ -3505,26 +4182,16 @@ function switchPageTab(tab) {
   const futuresView = document.getElementById('view-futures');
 
   if (tab === 'spot') {
-    futuresView.classList.remove('active');
-    // 短暂延迟再显示，让退场动画先走
-    setTimeout(() => {
-      spotView.style.display = 'block';
-      requestAnimationFrame(() => spotView.classList.add('active'));
-    }, 50);
-    futuresView.addEventListener('transitionend', () => {
-      if (!futuresView.classList.contains('active')) futuresView.style.display = 'none';
-    }, { once: true });
+    futuresView.classList.remove('visible');
+    futuresView.style.display = 'none';
+    spotView.style.display = 'block';
+    requestAnimationFrame(() => spotView.classList.add('visible'));
   } else {
-    spotView.classList.remove('active');
-    setTimeout(() => {
-      futuresView.style.display = 'block';
-      requestAnimationFrame(() => futuresView.classList.add('active'));
-      // 首次切换到期货页才加载数据
-      if (!futuresLoaded) { futuresLoaded = true; loadFuturesData(); }
-    }, 50);
-    spotView.addEventListener('transitionend', () => {
-      if (!spotView.classList.contains('active')) spotView.style.display = 'none';
-    }, { once: true });
+    spotView.classList.remove('visible');
+    spotView.style.display = 'none';
+    futuresView.style.display = 'block';
+    requestAnimationFrame(() => futuresView.classList.add('visible'));
+    if (!futuresLoaded) { futuresLoaded = true; loadFuturesData(); }
   }
 }
 
@@ -3539,7 +4206,7 @@ const AU_CONTRACTS = [
 
 async function loadFuturesData() {
   const statusEl = document.getElementById('futures-status-text');
-  if (statusEl) statusEl.textContent = '期货数据加载中…';
+  if (statusEl) statusEl.textContent = currentLang === 'zh' ? '期货数据加载中…' : 'Loading futures…';
 
   await Promise.allSettled([
     fetchSHGoldFutures(),
@@ -3547,7 +4214,7 @@ async function loadFuturesData() {
   ]);
 
   updateSpread();
-  if (statusEl) statusEl.textContent = '自动刷新每 60 秒 · 网页开启时有效';
+  if (statusEl) statusEl.textContent = currentLang === 'zh' ? '自动刷新每 60 秒 · 网页开启时有效' : 'Auto-refresh every 60s · Active while page is open';
 }
 
 // ─── 沪金期货：东方财富 JSONP ─────────────────────────────────────────
@@ -3579,9 +4246,9 @@ async function fetchSHGoldFutures() {
         if (cardEl) cardEl.className = 'futures-card ' + dir;
       }
       if (metaEl) {
-        const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + '万手' : vol + '手') : '--';
-        const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + '万手' : oi  + '手') : '--';
-        metaEl.textContent = '今日高 ' + (high || '--') + ' · 低 ' + (low || '--') + ' · 成交 ' + volStr + ' · 持仓 ' + oiStr;
+        const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + (currentLang === 'zh' ? '万手' : 'w lots') : vol + (currentLang === 'zh' ? '手' : ' lots')) : '--';
+        const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + (currentLang === 'zh' ? '万手' : 'w lots') : oi  + (currentLang === 'zh' ? '手' : ' lots')) : '--';
+        metaEl.textContent = (currentLang === 'zh' ? '今日高 ' : 'High ') + (high || '--') + (currentLang === 'zh' ? ' · 低 ' : ' · Low ') + (low || '--') + (currentLang === 'zh' ? ' · 成交 ' : ' · Vol ') + volStr + (currentLang === 'zh' ? ' · 持仓 ' : ' · OI ') + oiStr;
       }
       // 存入 state 供价差计算用
       state.futures = state.futures || {};
@@ -3612,8 +4279,8 @@ async function fetchSHGoldFutures() {
     const oi      = d && parseInt(d.f48);
     if (!price || isNaN(price)) return;
     const dir = changeP >= 0 ? 'up' : 'down';
-    const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + '万' : vol.toString()) : '--';
-    const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + '万' : oi.toString())  : '--';
+    const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + (currentLang === 'zh' ? '万' : 'w') : vol.toString()) : '--';
+    const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + (currentLang === 'zh' ? '万' : 'w') : oi.toString())  : '--';
     rows += '<div class="contract-row">'
       + '<span class="contract-name">' + label + '</span>'
       + '<span class="contract-price">' + price.toFixed(2) + '</span>'
@@ -3661,13 +4328,13 @@ async function fetchCOMEXGold() {
       priceEl.classList.remove('loading');
     }
     if (changeEl) {
-      changeEl.textContent = '≈ 现货参考价（COMEX期货接近现货）';
+      changeEl.textContent = currentLang === 'zh' ? '≈ 现货参考价（COMEX期货接近现货）' : '≈ Spot ref. (COMEX futures ≈ spot)';
       changeEl.className = 'futures-change neutral';
     }
     if (metaEl) {
       const hiStr = high ? '$' + Number(high).toFixed(2) : '--';
       const loStr = low  ? '$' + Number(low).toFixed(2)  : '--';
-      metaEl.textContent = '今日高 ' + hiStr + ' · 低 ' + loStr + ' · 数据来源：gold-api.com 现货';
+      metaEl.textContent = (currentLang === 'zh' ? '今日高 ' : 'High ') + hiStr + (currentLang === 'zh' ? ' · 低 ' : ' · Low ') + loStr + (currentLang === 'zh' ? ' · 数据来源：gold-api.com 现货' : ' · Source: gold-api.com spot');
     }
 
     state.futures = state.futures || {};
@@ -3693,14 +4360,14 @@ function updateSpread() {
 
   set('sp-spot',    spot.toFixed(2));
   set('sp-futures', futures.toFixed(2));
-  set('sp-diff',    sign + diff.toFixed(2) + ' 元/克', cls);
+  set('sp-diff',    sign + diff.toFixed(2) + (currentLang === 'zh' ? ' 元/克' : ' CNY/g'), cls);
   set('sp-pct',     sign + diffPct.toFixed(3) + '%', cls);
 }
 
 // ─── Main Refresh ─────────────────────────────────────
 async function refreshAll() {
   setRefreshing(true);
-  document.getElementById('status-text').textContent = '正在刷新…';
+  document.getElementById('status-text').textContent = currentLang === 'zh' ? '正在刷新…' : 'Refreshing…';
 
   // 第一轮：国际金价 + 京东补充层并发（京东民生价可作为 AU9999 反推依据）
   await Promise.allSettled([
@@ -3716,10 +4383,14 @@ async function refreshAll() {
 
   updateTimestamp();
   setRefreshing(false);
-  document.getElementById('status-text').textContent = '自动刷新每 60 秒 · 网页开启时有效';
+  document.getElementById('status-text').textContent = currentLang === 'zh' ? '自动刷新每 60 秒 · 网页开启时有效' : 'Auto-refresh every 60s · Active while page is open';
 
-  // 刷新后更新持仓盈亏和手机端银行卡片
-  renderPositions();
+  // 刷新后更新持仓盈亏（若被动刷新且用户正在浏览持仓，则延迟到离开时再刷）
+  if (!_userIsTyping() && !_posListVisible()) {
+    renderPositions();
+  } else {
+    _pendingPosRefresh = true; // 标记待刷新
+  }
   renderBankMobileCards();
   // 期货页已打开时同步刷新期货数据
   if (futuresLoaded) { loadFuturesData().catch(() => {}); }
@@ -3729,9 +4400,62 @@ async function refreshAll() {
 }
 
 // ─── Auto refresh ─────────────────────────────────────
+/* 判断是否有用户正在输入的 input/select/textarea */
+function _userIsTyping() {
+  const el = document.activeElement;
+  if (!el) return false;
+  return ['INPUT','SELECT','TEXTAREA'].includes(el.tagName) || el.isContentEditable;
+}
+
+/* 判断持仓列表区域是否在当前视口内（用户正在浏览） */
+function _posListVisible() {
+  const el = document.getElementById('pos-list');
+  if (!el) return false;
+  const rect = el.getBoundingClientRect();
+  return rect.top < window.innerHeight && rect.bottom > 0;
+}
+
+/* 手动刷新：始终执行，并更新按钮状态 */
+function posManualRefresh() {
+  const btn = document.getElementById('pos-refresh-btn');
+  if (btn) btn.classList.add('spinning');
+  renderPositions();
+  setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 600);
+}
+
+/* 被动刷新（定时器触发）：跳过条件检测 */
+let _pendingPosRefresh = false; // 被动刷新待执行标记
+
+function _scheduledRefreshAll() {
+  // 用户正在输入 → 跳过本次，标记待刷新
+  if (_userIsTyping()) {
+    _pendingPosRefresh = true;
+    return refreshAll().then(() => {}); // 价格数据照刷，只跳过 renderPositions
+  }
+  // 持仓区在视口内 → 跳过 renderPositions，标记待刷新
+  if (_posListVisible()) {
+    _pendingPosRefresh = true;
+    return refreshAll().then(() => {});
+  }
+  _pendingPosRefresh = false;
+  return refreshAll();
+}
+
+/* 用户停止输入 / 离开持仓区域时，补刷一次 */
+function _maybeFlushPosRefresh() {
+  if (_pendingPosRefresh && !_userIsTyping() && !_posListVisible()) {
+    _pendingPosRefresh = false;
+    renderPositions();
+  }
+}
+
 function startAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
+  refreshTimer = setInterval(_scheduledRefreshAll, REFRESH_INTERVAL);
+
+  // 监听用户输入结束 + 滚动离开，触发补刷
+  document.addEventListener('blur',   _maybeFlushPosRefresh, true);
+  window.addEventListener('scroll',   _maybeFlushPosRefresh, { passive: true });
 }
 
 // ─── Init ─────────────────────────────────────────────
