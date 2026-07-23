@@ -1277,7 +1277,7 @@ main {
   border-bottom: 1px solid var(--bg4);
   background: var(--bg);
   position: sticky;
-  top: var(--header-h, 52px); /* 由 JS 动态测量写入，fallback 52px */
+  top: var(--header-h, 52px); 
   z-index: 90;
 }
 
@@ -1302,7 +1302,6 @@ main {
   border-bottom-color: var(--gold);
 }
 
-/* 页面内容切换动画 */
 .page-view {
   display: none;
 }
@@ -2986,12 +2985,21 @@ function restoreSectionStates() {
 }
 
 // ─── Tab visibility ticker ─────────────────────────────
+let hiddenAt = null;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    hiddenAt = Date.now();
     startTitleTicker();
   } else {
     stopTitleTicker();
     document.title = originalTitle;
+    // 离开页面超过60秒再回来时，数据大概率已经过期（此时距上次刷新可能远超60秒的
+    // 自动刷新间隔，因为页面隐藏时部分浏览器会节流/暂停定时器），立即补刷一次，
+    // 不让用户回来后还要傻等下一个自动刷新周期。
+    if (hiddenAt && (Date.now() - hiddenAt > 60000)) {
+      refreshAll();
+    }
+    hiddenAt = null;
   }
 });
 
@@ -3044,8 +3052,8 @@ function setCard(id, price, change, changeP, unit='', decimals=2) {
   if (!priceEl) return;
   priceEl.textContent = price.toLocaleString('zh-CN', {minimumFractionDigits: decimals, maximumFractionDigits: decimals}) + (unit ? ' '+unit : '');
   priceEl.classList.remove('loading');
-  const dir = change >= 0 ? 'up' : 'down';
-  const arrow = change >= 0 ? '▲' : '▼';
+  const dir = isRoundedNonNegative(change) ? 'up' : 'down';
+  const arrow = isRoundedNonNegative(change) ? '▲' : '▼';
   changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(2)} (${Math.abs(changeP).toFixed(2)}%)`;
   changeEl.className = 'card-change ' + dir;
   if (card) card.className = 'price-card ' + dir;
@@ -3068,8 +3076,8 @@ function setETF(code, price, change, changeP) {
   if (!priceEl) return;
   priceEl.textContent = price.toFixed(4);
   priceEl.classList.remove('loading');
-  const dir = change >= 0 ? 'up' : 'down';
-  const arrow = change >= 0 ? '▲' : '▼';
+  const dir = isRoundedNonNegative(change) ? 'up' : 'down';
+  const arrow = isRoundedNonNegative(change) ? '▲' : '▼';
   changeEl.textContent = `${arrow} ${Math.abs(change).toFixed(4)} (${Math.abs(changeP).toFixed(2)}%)`;
   changeEl.className = 'etf-change ' + dir;
   if (card) { card.className = 'etf-card ' + dir; }
@@ -3165,6 +3173,22 @@ function withTimeout(promise, ms, label) {
   ]);
 }
 
+// ─── 涨跌幅符号格式化 ──────────────────────────────────────────────────
+// 修复常见的"-0.00%"负零显示 bug：原始值是极小负数（如 -0.003）时，
+// 直接用 `value >= 0 ? '+' : ''` 判断符号 + toFixed 会显示成 "-0.00%"，
+// 视觉上很怪（明明四舍五入后就是0，却带负号）。这里统一改成：
+// 四舍五入后为 0，一律按非负处理，显示 "+0.00"，与真正的0保持一致观感。
+function isRoundedNonNegative(value, decimals) {
+  decimals = decimals == null ? 2 : decimals;
+  if (value >= 0) return true;
+  return parseFloat(Math.abs(value).toFixed(decimals)) === 0;
+}
+function fmtSigned(value, decimals) {
+  decimals = decimals == null ? 2 : decimals;
+  const nonNeg = isRoundedNonNegative(value, decimals);
+  return (nonNeg ? '+' : '-') + Math.abs(value).toFixed(decimals);
+}
+
 // ─── 通用 GBK fetch：直连 → 3s超时代理 ─────────────────────────────
 async function fetchGBK(url) {
   try {
@@ -3222,9 +3246,28 @@ function parseTencentAU(text) {
   return null;
 }
 
+// ─── 新浪上海金现货解析（实测字段位置，2026-07-21/22）─────────────────
+// 0最新价 3今开 4最高 5最低 6时间 7昨收 12日期 13名称
+// 涨跌幅 = (p[0] − p[7]) / p[7] × 100
+// 同样受 Referer 限制，浏览器脚本无法自行设置该请求头，可能会失败。
+function parseSinaAU9999(text) {
+  if (!text) return null;
+  const m = text.match(/="([^"]*)"/);
+  if (!m || !m[1]) return null;
+  const p = m[1].split(',');
+  if (p.length < 8) return null;
+  const price = parseFloat(p[0]);
+  if (isNaN(price) || price <= 0) return null;
+  const prevClose = parseFloat(p[7]);
+  const change  = (!isNaN(prevClose) && prevClose > 0) ? price - prevClose : 0;
+  const changeP = (!isNaN(prevClose) && prevClose > 0) ? (change / prevClose * 100) : 0;
+  return { price, change, changeP };
+}
+
 // ─── Fetch Domestic ──────────────────────────────────────────────────
 // ① 东方财富 JSONP（方案A，稳定无CORS，<200ms）
 // → ② 腾讯直连 / 3s代理（原方案备用）
+// → ②.5 新浪现货（Referer 限制下可能失败，额外一层兜底）
 // → ③ 京东民生反推（积存金价-点差，比汇率估算准）
 // → ④ 国际金价换算（最终兜底）
 async function fetchDomestic() {
@@ -3252,6 +3295,15 @@ async function fetchDomestic() {
       parsed = parseTencentAU(text);
       if (parsed) { srcName = currentLang==='zh' ? '腾讯证券 qt.gtimg.cn' : 'Tencent Finance'; console.log('[AU9999] 腾讯成功:', parsed.price); }
     } catch(e) { console.warn('[AU9999] 腾讯失败:', e.message); }
+  }
+
+  // ②.5 新浪现货（同样有 Referer 限制，可能失败，作为腾讯之后的额外一层兜底）
+  if (!parsed) {
+    try {
+      const text = await withTimeout(fetchGBK('https://hq.sinajs.cn/list=gds_AU9999'), 3000, 'sina-AU9999');
+      parsed = parseSinaAU9999(text);
+      if (parsed) { srcName = currentLang==='zh' ? '新浪财经 gds_AU9999' : 'Sina Finance'; console.log('[AU9999] 新浪成功:', parsed.price); }
+    } catch(e) { console.warn('[AU9999] 新浪失败（可能是 Referer 限制):', e.message); }
   }
 
   // ③ 京东民生反推
@@ -3391,34 +3443,38 @@ const JD_MINSHENG_URL = 'https://api.jdjygold.com/gw/generic/hj/h5/m/latestPrice
 const JD_CZB_URL      = 'https://api.jdjygold.com/gw2/generic/jrm/h5/m/stdLatestPrice?productSku=1961543816';
 
 async function fetchJDGold() {
-  let minshengPrice = null, czbPrice = null;
-
-  // ── 民生积存金（GET → allorigins 代理）
-  try {
+  // allorigins 是免费公共代理，偶尔会慢或502，这里给每个请求单独加超时保护
+  // （原来是串行两次 await，没有超时，代理一卡整个刷新链路都会被拖慢），
+  // 改为并发请求，任一个慢/挂了都不影响另一个，也不影响后续刷新流程。
+  const fetchMinsheng = async () => {
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(JD_MINSHENG_URL)}`;
-    const res = await fetch(proxyUrl);
-    if (res.ok) {
-      const wrapper = await res.json();
-      const json = JSON.parse(wrapper.contents);
-      const d = json?.resultData?.datas;
-      const p = parseFloat(d?.buyPrice ?? d?.price);
-      if (!isNaN(p) && p > 0) { minshengPrice = p; console.log('[JD] 民生:', p); }
-    }
-  } catch(e) { console.debug('[JD] 民生失败（静默）'); }
-
-  // ── 浙商积存金（allorigins 仅支持 GET，改用 GET 方式请求）
-  // 接口 GET 方式同样有效（body 为空时服务端接受 GET）
-  try {
+    const res = await withTimeout(fetch(proxyUrl), 3500, 'JD-minsheng');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const wrapper = await res.json();
+    const json = JSON.parse(wrapper.contents);
+    const d = json?.resultData?.datas;
+    const p = parseFloat(d?.buyPrice ?? d?.price);
+    if (isNaN(p) || p <= 0) throw new Error('invalid price');
+    return p;
+  };
+  const fetchCzb = async () => {
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(JD_CZB_URL)}`;
-    const res = await fetch(proxyUrl);
-    if (res.ok) {
-      const wrapper = await res.json();
-      const json = JSON.parse(wrapper.contents);
-      const d = json?.resultData?.datas;
-      const p = parseFloat(d?.price ?? d?.buyPrice);
-      if (!isNaN(p) && p > 0) { czbPrice = p; console.log('[JD] 浙商:', p); }
-    }
-  } catch(e) { console.debug('[JD] 浙商失败（静默）'); }
+    const res = await withTimeout(fetch(proxyUrl), 3500, 'JD-czb');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const wrapper = await res.json();
+    const json = JSON.parse(wrapper.contents);
+    const d = json?.resultData?.datas;
+    const p = parseFloat(d?.price ?? d?.buyPrice);
+    if (isNaN(p) || p <= 0) throw new Error('invalid price');
+    return p;
+  };
+
+  const [msResult, czbResult] = await Promise.allSettled([fetchMinsheng(), fetchCzb()]);
+  let minshengPrice = null, czbPrice = null;
+  if (msResult.status === 'fulfilled') { minshengPrice = msResult.value; console.log('[JD] 民生:', minshengPrice); }
+  else console.debug('[JD] 民生失败（静默）:', msResult.reason?.message);
+  if (czbResult.status === 'fulfilled') { czbPrice = czbResult.value; console.log('[JD] 浙商:', czbPrice); }
+  else console.debug('[JD] 浙商失败（静默）:', czbResult.reason?.message);
 
   if (!minshengPrice && !czbPrice) return; // 全部失败，静默退出
 
@@ -4316,8 +4372,7 @@ function applyPositionReduce(idx) {
   let toastMsg;
   if (currentPrice) {
     const realized = (currentPrice - p.cost) * reduceAmt;
-    const sign = realized >= 0 ? '+' : '';
-    toastMsg = (zh ? '已减仓，已实现盈亏 ' : 'Reduced. Realized P&L ') + sign + realized.toFixed(2);
+    toastMsg = (zh ? '已减仓，已实现盈亏 ' : 'Reduced. Realized P&L ') + fmtSigned(realized, 2);
   } else {
     toastMsg = zh ? '已减仓' : 'Reduced';
   }
@@ -4430,10 +4485,9 @@ function renderPositions() {
     });
     const gPnl = gMarket - gCost;
     const gPnlPct = gCost > 0 ? (gPnl / gCost * 100) : 0;
-    const gPnlClass = gMissing > 0 ? '' : gPnl >= 0 ? 'profit' : 'loss';
+    const gPnlClass = gMissing > 0 ? '' : isRoundedNonNegative(gPnl) ? 'profit' : 'loss';
     const gPnlStr = gMissing > 0 ? '获取中'
-      : (gPnl >= 0 ? '+' : '') + '¥' + gPnl.toFixed(2)
-        + ' (' + (gPnlPct >= 0 ? '+' : '') + gPnlPct.toFixed(2) + '%)';
+      : '¥' + fmtSigned(gPnl, 2) + ' (' + fmtSigned(gPnlPct, 2) + '%)';
 
     // 同品种合并
     const merged = {};
@@ -4460,10 +4514,9 @@ function renderPositions() {
       const marketVal  = currentPrice ? currentPrice * m.totalAmount : null;
       const pnl        = marketVal != null ? marketVal - m.totalCost : null;
       const pnlPct     = pnl != null ? (pnl / m.totalCost * 100) : null;
-      const pnlClass   = pnl == null ? '' : pnl >= 0 ? 'profit' : 'loss';
+      const pnlClass   = pnl == null ? '' : isRoundedNonNegative(pnl) ? 'profit' : 'loss';
       const pnlStr     = pnl == null ? '价格获取中'
-        : (pnl >= 0 ? '+' : '') + pnl.toFixed(2)
-          + ' (' + (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%)';
+        : fmtSigned(pnl, 2) + ' (' + fmtSigned(pnlPct, 2) + '%)';
       const unit = getPosUnit(m.type);
       const isMulti = m.entries.length > 1;
       const detailOpen = !!detailExpanded[gid + '_' + m.type];
@@ -4517,10 +4570,9 @@ function renderPositions() {
           const mv2  = cp2 ? cp2 * p.amount : null;
           const pnl2 = mv2 != null ? mv2 - p.cost * p.amount : null;
           const pct2 = pnl2 != null ? (pnl2 / (p.cost * p.amount) * 100) : null;
-          const pc2  = pnl2 == null ? '' : pnl2 >= 0 ? 'profit' : 'loss';
+          const pc2  = pnl2 == null ? '' : isRoundedNonNegative(pnl2) ? 'profit' : 'loss';
           const ps2  = pnl2 == null ? '--'
-            : (pnl2 >= 0 ? '+' : '') + pnl2.toFixed(2)
-              + ' (' + (pct2 >= 0 ? '+' : '') + pct2.toFixed(2) + '%)';
+            : fmtSigned(pnl2, 2) + ' (' + fmtSigned(pct2, 2) + '%)';
           const days = holdingDays(p.buyDate);
           const meta2 = [
             p.buyDate ? p.buyDate : '',
@@ -4555,7 +4607,7 @@ function renderPositions() {
   const hasAllPrices = missingPriceCount === 0;
   const totalPnl    = totalMarket - totalCost;
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost * 100) : 0;
-  const pnlClass    = hasAllPrices ? (totalPnl >= 0 ? 'profit' : 'loss') : 'neutral';
+  const pnlClass    = hasAllPrices ? (isRoundedNonNegative(totalPnl) ? 'profit' : 'loss') : 'neutral';
 
   const se = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
   const sc = (id, cls) => { const el = document.getElementById(id); if (el) el.className = 'position-stat-value ' + cls; };
@@ -4567,8 +4619,8 @@ function renderPositions() {
     ? '¥' + totalMarket.toFixed(2) + (hasAllPrices ? '' : ' (部分)')
     : '价格获取中');
   if (hasAllPrices) {
-    se('pos-pnl',     (totalPnl >= 0 ? '+' : '') + '¥' + totalPnl.toFixed(2));
-    se('pos-pnl-pct', (totalPnlPct >= 0 ? '+' : '') + totalPnlPct.toFixed(2) + '%');
+    se('pos-pnl',     '¥' + fmtSigned(totalPnl, 2));
+    se('pos-pnl-pct', fmtSigned(totalPnlPct, 2) + '%');
   } else {
     se('pos-pnl',     '数据不完整');
     se('pos-pnl-pct', missingPriceCount + ' 笔价格未就绪');
@@ -4760,13 +4812,22 @@ function switchPageTab(tab) {
 }
 
 // ─── 期货数据加载 ─────────────────────────────────────────────────────
-const AU_CONTRACTS = [
-  { code: 'AU0',   secid: '113.AU0',   label: '沪金主力' },
-  { code: 'AU2506', secid: '113.AU2506', label: '沪金2506' },
-  { code: 'AU2508', secid: '113.AU2508', label: '沪金2508' },
-  { code: 'AU2510', secid: '113.AU2510', label: '沪金2510' },
-  { code: 'AU2512', secid: '113.AU2512', label: '沪金2512' },
-];
+// 近月合约动态生成：沪金(AU)期货每个月份都有合约上市，写死具体年月的合约代码
+// 过一段时间就会全部到期变成无效合约（历史上就踩过这个坑），改为按当前日期
+// 自动生成"下个月起连续5个月"的合约代码，任何时候打开页面都不会过期。
+function generateAUContracts() {
+  const now = new Date();
+  const contracts = [];
+  for (let i = 1; i <= 5; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const yy = String(d.getFullYear()).slice(2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const code = `AU${yy}${mm}`;
+    contracts.push({ code, secid: `113.${code}`, label: code });
+  }
+  return contracts;
+}
+const AU_CONTRACTS = generateAUContracts();
 
 async function loadFuturesData() {
   const statusEl = document.getElementById('futures-status-text');
@@ -4781,45 +4842,96 @@ async function loadFuturesData() {
   if (statusEl) statusEl.textContent = currentLang === 'zh' ? '自动刷新每 60 秒 · 网页开启时有效' : 'Auto-refresh every 60s · Active while page is open';
 }
 
-// ─── 沪金期货：东方财富 JSONP ─────────────────────────────────────────
+// ─── 新浪沪金连续解析（东财失败后的兜底源）─────────────────────────────
+// 字段位置来自实测（2026-07-21/22）：
+// 0名称 1编号 2今开 3最高 4最低 5昨收(参考) 6买价 7卖价 8最新价 9结算价
+// 10昨结算(涨跌幅基准) 11买量 12卖量 13持仓量 14成交量 15交易所 16品种 17日期
+// 涨跌幅 = (p[8] − p[10]) / p[10] × 100
+// 已知限制：新浪要求请求带 Referer，浏览器脚本无法自行设置该请求头，
+// 实际部署环境中大概率会被拒绝（这是新浪服务端的限制，不是代码bug），
+// 仅作为东财失败后的最后尝试，失败也不影响页面其他部分。
+function parseSinaAU0(text) {
+  if (!text) return null;
+  const m = text.match(/="([^"]*)"/);
+  if (!m || !m[1]) return null;
+  const p = m[1].split(',');
+  if (p.length < 15) return null;
+  const price = parseFloat(p[8]);
+  if (isNaN(price) || price <= 0) return null;
+  const prevSettle = parseFloat(p[10]);
+  const change  = (!isNaN(prevSettle) && prevSettle > 0) ? price - prevSettle : 0;
+  const changeP = (!isNaN(prevSettle) && prevSettle > 0) ? (change / prevSettle * 100) : 0;
+  const high = parseFloat(p[3]), low = parseFloat(p[4]);
+  const oi   = parseInt(p[13], 10), vol = parseInt(p[14], 10);
+  return {
+    price, change, changeP,
+    high: isNaN(high) ? null : high,
+    low:  isNaN(low)  ? null : low,
+    oi:   isNaN(oi)   ? null : oi,
+    vol:  isNaN(vol)  ? null : vol,
+  };
+}
+
+// ─── 沪金期货：东方财富 → 新浪（二级兜底）───────────────────────────────
+// 原方案里还有一级"腾讯 nf_AU0"，实测腾讯根本没有沪金连续这个代码
+// （返回 v_pv_none_match="1"，AU2512 等具体合约变体同样如此），已撤掉，
+// 东财失败后直接落新浪。
 async function fetchSHGoldFutures() {
   // 主力合约
+  let parsed = null, srcName = null;
+
+  // ① 东方财富（原方案；113.AU0 曾出现持续空数据/被限流的情况）
   try {
     const data = await fetchEM('113.AU0', 'f43,f169,f170,f44,f45,f47,f48');
     const d = data && data.data;
-    const price   = d && parseFloat(d.f43);
-    const change  = d && parseFloat(d.f169) || 0;
-    const changeP = d && parseFloat(d.f170) || 0;
-    const high    = d && parseFloat(d.f44);
-    const low     = d && parseFloat(d.f45);
-    const vol     = d && parseInt(d.f47);
-    const oi      = d && parseInt(d.f48);
-
+    const price = d && parseFloat(d.f43);
     if (price && !isNaN(price) && price > 0) {
-      const priceEl  = document.getElementById('fp-au0');
-      const changeEl = document.getElementById('fc-au0-change');
-      const metaEl   = document.getElementById('fm-au0');
-      const cardEl   = document.getElementById('fc-au0');
-
-      if (priceEl) { priceEl.textContent = price.toFixed(2); priceEl.classList.remove('loading'); }
-      if (changeEl) {
-        const dir = change >= 0 ? 'up' : 'down';
-        const arrow = change >= 0 ? '▲' : '▼';
-        changeEl.textContent = arrow + ' ' + Math.abs(change).toFixed(2) + ' (' + Math.abs(changeP).toFixed(2) + '%)';
-        changeEl.className = 'futures-change ' + dir;
-        if (cardEl) cardEl.className = 'futures-card ' + dir;
-      }
-      if (metaEl) {
-        const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + (currentLang === 'zh' ? '万手' : 'w lots') : vol + (currentLang === 'zh' ? '手' : ' lots')) : '--';
-        const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + (currentLang === 'zh' ? '万手' : 'w lots') : oi  + (currentLang === 'zh' ? '手' : ' lots')) : '--';
-        metaEl.textContent = (currentLang === 'zh' ? '今日高 ' : 'High ') + (high || '--') + (currentLang === 'zh' ? ' · 低 ' : ' · Low ') + (low || '--') + (currentLang === 'zh' ? ' · 成交 ' : ' · Vol ') + volStr + (currentLang === 'zh' ? ' · 持仓 ' : ' · OI ') + oiStr;
-      }
-      // 存入 state 供价差计算用
-      state.futures = state.futures || {};
-      state.futures.au0 = price;
-      console.log('[Futures] 沪金 AU0:', price);
+      parsed = {
+        price, change: parseFloat(d.f169) || 0, changeP: parseFloat(d.f170) || 0,
+        high: parseFloat(d.f44) || null, low: parseFloat(d.f45) || null,
+        vol: parseInt(d.f47) || null, oi: parseInt(d.f48) || null,
+      };
+      srcName = 'Eastmoney 113.AU0';
+      console.log('[Futures] 东方财富 AU0 成功:', price);
     }
-  } catch(e) { console.warn('[Futures] 沪金主力失败:', e.message); }
+  } catch(e) { console.warn('[Futures] 东方财富 AU0 失败:', e.message); }
+
+  // ② 新浪（兜底，Referer 限制下可能失败，仅尝试一次）
+  if (!parsed) {
+    try {
+      const text = await withTimeout(fetchGBK('https://hq.sinajs.cn/list=nf_AU0'), 3000, 'sina-AU0');
+      const p = parseSinaAU0(text);
+      if (p) { parsed = p; srcName = 'Sina nf_AU0'; console.log('[Futures] 新浪 AU0 成功（兜底源）:', p.price); }
+    } catch(e) { console.warn('[Futures] 新浪 AU0 失败（可能是 Referer 限制，浏览器脚本无法设置该请求头):', e.message); }
+  }
+
+  if (parsed) {
+    const { price, change, changeP, high, low, vol, oi } = parsed;
+    const priceEl  = document.getElementById('fp-au0');
+    const changeEl = document.getElementById('fc-au0-change');
+    const metaEl   = document.getElementById('fm-au0');
+    const cardEl   = document.getElementById('fc-au0');
+
+    if (priceEl) { priceEl.textContent = price.toFixed(2); priceEl.classList.remove('loading'); }
+    if (changeEl) {
+      const dir = isRoundedNonNegative(change) ? 'up' : 'down';
+      const arrow = isRoundedNonNegative(change) ? '▲' : '▼';
+      changeEl.textContent = arrow + ' ' + Math.abs(change).toFixed(2) + ' (' + fmtSigned(changeP, 2) + '%)';
+      changeEl.className = 'futures-change ' + dir;
+      if (cardEl) cardEl.className = 'futures-card ' + dir;
+    }
+    if (metaEl) {
+      const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + (currentLang === 'zh' ? '万手' : 'w lots') : vol + (currentLang === 'zh' ? '手' : ' lots')) : '--';
+      const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + (currentLang === 'zh' ? '万手' : 'w lots') : oi  + (currentLang === 'zh' ? '手' : ' lots')) : '--';
+      metaEl.textContent = (currentLang === 'zh' ? '今日高 ' : 'High ') + (high || '--') + (currentLang === 'zh' ? ' · 低 ' : ' · Low ') + (low || '--') + (currentLang === 'zh' ? ' · 成交 ' : ' · Vol ') + volStr + (currentLang === 'zh' ? ' · 持仓 ' : ' · OI ') + oiStr;
+    }
+    state.futures = state.futures || {};
+    state.futures.au0 = price;
+    state.sources.futures_au0 = srcName;
+    console.log('[Futures] 沪金 AU0:', price, '来源:', srcName);
+  } else {
+    console.error('[Futures] 沪金主力所有来源均失败（东方财富/新浪）');
+  }
 
   // 近月合约列表
   const listEl = document.getElementById('au-contracts-list');
@@ -4842,13 +4954,13 @@ async function fetchSHGoldFutures() {
     const vol     = d && parseInt(d.f47);
     const oi      = d && parseInt(d.f48);
     if (!price || isNaN(price)) return;
-    const dir = changeP >= 0 ? 'up' : 'down';
+    const dir = isRoundedNonNegative(changeP) ? 'up' : 'down';
     const volStr = vol ? (vol > 10000 ? (vol/10000).toFixed(1) + (currentLang === 'zh' ? '万' : 'w') : vol.toString()) : '--';
     const oiStr  = oi  ? (oi  > 10000 ? (oi /10000).toFixed(1) + (currentLang === 'zh' ? '万' : 'w') : oi.toString())  : '--';
     rows += '<div class="contract-row">'
       + '<span class="contract-name">' + label + '</span>'
       + '<span class="contract-price">' + price.toFixed(2) + '</span>'
-      + '<span class="contract-change ' + dir + '">' + (changeP >= 0 ? '+' : '') + changeP.toFixed(2) + '%</span>'
+      + '<span class="contract-change ' + dir + '">' + fmtSigned(changeP, 2) + '%</span>'
       + '<span class="contract-vol">' + volStr + '</span>'
       + '<span class="contract-oi">'  + oiStr  + '</span>'
       + '</div>';
@@ -4914,8 +5026,7 @@ function updateSpread() {
 
   const diff    = futures - spot;
   const diffPct = (diff / spot * 100);
-  const cls     = diff >= 0 ? 'pos' : 'neg';
-  const sign    = diff >= 0 ? '+' : '';
+  const cls     = isRoundedNonNegative(diff) ? 'pos' : 'neg';
 
   const set = (id, txt, c) => {
     const el = document.getElementById(id);
@@ -4924,8 +5035,8 @@ function updateSpread() {
 
   set('sp-spot',    spot.toFixed(2));
   set('sp-futures', futures.toFixed(2));
-  set('sp-diff',    sign + diff.toFixed(2) + (currentLang === 'zh' ? ' 元/克' : ' CNY/g'), cls);
-  set('sp-pct',     sign + diffPct.toFixed(3) + '%', cls);
+  set('sp-diff',    fmtSigned(diff, 2) + (currentLang === 'zh' ? ' 元/克' : ' CNY/g'), cls);
+  set('sp-pct',     fmtSigned(diffPct, 3) + '%', cls);
 }
 
 // ─── Main Refresh ─────────────────────────────────────
